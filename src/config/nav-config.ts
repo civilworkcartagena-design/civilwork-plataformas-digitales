@@ -46,6 +46,14 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Los Corales',
+        url: '/dashboard/los-corales',
+        icon: 'workspace',
+        isActive: false,
+        shortcut: ['l', 'c'],
+        items: []
+      },
+      {
         title: 'Workspaces',
         url: '/dashboard/workspaces',
         icon: 'workspace',
