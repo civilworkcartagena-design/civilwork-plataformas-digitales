@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum MovementType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+}
+
+model Project {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  name          String
+  client        String
+  location      String
+  contractValue Decimal       @db.Decimal(16, 2)
+  startDate     DateTime
+  endDate       DateTime
+  status        ProjectStatus @default(PLANNING)
+  whatsapp      String?
+  chapters      Chapter[]
+  movements     Movement[]
+  progress      Progress[]
+  documents     Document[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Chapter {
+  id         String     @id @default(cuid())
+  projectId  String
+  project    Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  code       String
+  name       String
+  budget     Decimal    @db.Decimal(16, 2)
+  activities Activity[]
+  createdAt  DateTime   @default(now())
+
+  @@unique([projectId, code])
+}
+
+model Activity {
+  id        String     @id @default(cuid())
+  chapterId String
+  chapter   Chapter    @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  code      String
+  name      String
+  unit      String
+  quantity  Decimal    @db.Decimal(14, 3)
+  unitPrice Decimal    @db.Decimal(16, 2)
+  movements Movement[]
+  progress  Progress[]
+
+  @@unique([chapterId, code])
+}
+
+model Movement {
+  id          String       @id @default(cuid())
+  projectId   String
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activityId  String?
+  activity    Activity?    @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  type        MovementType
+  category    String
+  description String
+  thirdParty  String?
+  amount      Decimal      @db.Decimal(16, 2)
+  occurredAt  DateTime
+  document    Document?
+  createdAt   DateTime     @default(now())
+}
+
+model Progress {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  activityId String?
+  activity   Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  percentage Decimal   @db.Decimal(5, 2)
+  note       String?
+  reportedAt DateTime
+  createdAt  DateTime  @default(now())
+}
+
+model Document {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  movementId String?   @unique
+  movement   Movement? @relation(fields: [movementId], references: [id], onDelete: SetNull)
+  name       String
+  url        String
+  mimeType   String
+  size       Int
+  createdAt  DateTime  @default(now())
+}
+
