@@ -1062,6 +1062,129 @@
 .g-mobile-brand {
   display: none;
 }
+.g-modal-wide {
+  width: min(760px, calc(100vw - 28px));
+  max-height: calc(100vh - 42px);
+  overflow: auto;
+}
+.g-empty-state {
+  padding: 38px;
+}
+.g-empty-state h2 {
+  color: var(--g-navy);
+  font: 30px Georgia;
+  margin: 8px 0 10px;
+}
+.g-empty-state p {
+  color: var(--g-muted);
+  max-width: 720px;
+}
+.g-import-box {
+  border: 1px dashed #c7d1db;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+}
+.g-import-box strong {
+  color: var(--g-navy);
+}
+.g-import-box input {
+  background: #fff;
+}
+.g-status-row,
+.g-row-actions,
+.g-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.g-row-actions button {
+  border: 1px solid #d7e0e7;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--g-blue);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 7px 10px;
+}
+.g-row-actions button:hover {
+  border-color: var(--g-blue);
+}
+.g-status.pending {
+  background: #eef3f7;
+  color: #38546a;
+}
+.g-status-cell {
+  justify-content: center;
+  min-width: 34px;
+}
+.g-muted-cell {
+  color: #a9b4bd;
+  font-size: 11px;
+}
+.g-calendar-card {
+  overflow-x: auto;
+}
+.g-calendar-card th,
+.g-calendar-card td {
+  min-width: 92px;
+  text-align: center;
+}
+.g-calendar-card th:first-child,
+.g-calendar-card td:first-child {
+  left: 0;
+  min-width: 190px;
+  position: sticky;
+  text-align: left;
+  z-index: 1;
+}
+.g-calendar-card td:first-child {
+  background: #fff;
+}
+.g-life-sheet {
+  margin-bottom: 18px;
+}
+.g-life-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, 1fr);
+}
+.g-life-grid > div {
+  border-left: 3px solid var(--g-gold);
+  min-width: 0;
+  padding-left: 12px;
+}
+.g-life-grid p {
+  color: var(--g-muted);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+.g-life-grid strong {
+  color: var(--g-text);
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.g-chip-list {
+  margin-top: 16px;
+}
+.g-chip-list span {
+  background: #edf4f8;
+  border: 1px solid #d8e7ef;
+  border-radius: 999px;
+  color: var(--g-blue);
+  font-size: 12px;
+  padding: 8px 11px;
+}
+.positive {
+  color: #24734d;
+}
+.negative {
+  color: #b33b2f;
+}
 @media (max-width: 1050px) {
   .g-kpis {
     grid-template-columns: repeat(2, 1fr);
@@ -1124,6 +1247,9 @@
   }
   .g-doc-grid {
     grid-template-columns: 1fr;
+  }
+  .g-life-grid {
+    grid-template-columns: 1fr 1fr;
   }
   .g-login {
     display: block;

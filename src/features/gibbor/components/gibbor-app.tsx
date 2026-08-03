@@ -1,372 +1,493 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 
-type View = 'Resumen' | 'Proyectos' | 'Presupuesto' | 'Movimientos' | 'Avance' | 'Documentos';
-type Movement = {
-  id: number;
-  type: 'Ingreso' | 'Gasto';
-  concept: string;
-  provider: string;
-  amount: number;
-  date: string;
-};
-type Project = {
-  id: number;
+type View =
+  | 'Resumen'
+  | 'Equipos'
+  | 'Programacion'
+  | 'Registro'
+  | 'Calendario'
+  | 'Hoja de Vida'
+  | 'Personal';
+
+type MaintenanceType = 'PREVENTIVO' | 'CORRECTIVO';
+type StatusCode = 'E' | 'R' | 'N' | 'P';
+
+type Equipment = {
   code: string;
   name: string;
+  brand: string;
   client: string;
-  city: string;
-  budget: number;
-  progress: number;
-  status: string;
+  features: string;
+  model: string;
+  location: string;
+  capacity: string;
+  address: string;
+  phone: string;
+  openedAt: string;
+  frequencyDays: number;
+  responsible: string;
 };
-type Chapter = { code: string; name: string; budget: number; executed: number; progress: number };
+
+type Maintenance = {
+  id: string;
+  date: string;
+  code: string;
+  type: MaintenanceType;
+  description: string;
+  value: number;
+  laborCost: number;
+  utility: number;
+  personnel: string;
+};
+
+type CalendarMark = {
+  id: string;
+  code: string;
+  date: string;
+  status: StatusCode;
+  note: string;
+};
+
+type Frequency = { days: number; label: string };
+
+type Organization = {
+  company: string;
+  city: string;
+  manager: string;
+};
+
+type MaintenanceState = {
+  organization: Organization;
+  equipment: Equipment[];
+  maintenances: Maintenance[];
+  calendarMarks: CalendarMark[];
+  personnel: string[];
+  frequencies: Frequency[];
+};
+
+type ImportedWorkbook = Partial<MaintenanceState> & { importedAt?: string };
+
+const storageKey = 'gibbor-maintenance-v2';
 
 const money = new Intl.NumberFormat('es-CO', {
   style: 'currency',
   currency: 'COP',
   maximumFractionDigits: 0
 });
-const compact = new Intl.NumberFormat('es-CO', { notation: 'compact', maximumFractionDigits: 1 });
 
-const initialProjects: Project[] = [
-  {
-    id: 1,
-    code: 'GIB-025',
-    name: 'Los Corales',
-    client: 'Inversiones del Caribe',
-    city: 'Barranquilla',
-    budget: 171542976,
-    progress: 68,
-    status: 'En ejecución'
-  },
-  {
-    id: 2,
-    code: 'GIB-024',
-    name: 'Bodega Malambo',
-    client: 'Logística Norte S.A.S.',
-    city: 'Malambo',
-    budget: 284000000,
-    progress: 42,
-    status: 'En ejecución'
-  },
-  {
-    id: 3,
-    code: 'GIB-023',
-    name: 'Adecuación Castellana',
-    client: 'Grupo Castellana',
+const percent = new Intl.NumberFormat('es-CO', {
+  style: 'percent',
+  maximumFractionDigits: 0
+});
+
+const defaultFrequencies: Frequency[] = [
+  { days: 7, label: 'Semanal' },
+  { days: 15, label: 'Quincenal' },
+  { days: 30, label: 'Mensual' },
+  { days: 60, label: 'Bimestral' },
+  { days: 90, label: 'Trimestral' },
+  { days: 120, label: '4 meses' },
+  { days: 180, label: 'Semestral' },
+  { days: 240, label: '8 meses' },
+  { days: 360, label: 'Anual' }
+];
+
+const emptyState: MaintenanceState = {
+  organization: {
+    company: 'GIBBOR Soluciones S.A.S.',
     city: 'Cartagena',
-    budget: 96800000,
-    progress: 100,
-    status: 'Finalizado'
+    manager: 'Jose Ceden'
   },
-  {
-    id: 4,
-    code: 'GIB-026',
-    name: 'Oficinas Prado',
-    client: 'Proyectos Prado',
-    city: 'Barranquilla',
-    budget: 128500000,
-    progress: 12,
-    status: 'Planeación'
-  }
+  equipment: [],
+  maintenances: [],
+  calendarMarks: [],
+  personnel: [],
+  frequencies: defaultFrequencies
+};
+
+const nav: { label: View; caption: string }[] = [
+  { label: 'Resumen', caption: 'KPI' },
+  { label: 'Equipos', caption: 'EQ' },
+  { label: 'Programacion', caption: 'PR' },
+  { label: 'Registro', caption: 'MT' },
+  { label: 'Calendario', caption: 'E/R' },
+  { label: 'Hoja de Vida', caption: 'HV' },
+  { label: 'Personal', caption: 'PE' }
 ];
 
-const initialChapters: Chapter[] = [
-  {
-    code: '01',
-    name: 'Preliminares y demolición',
-    budget: 8400000,
-    executed: 7950000,
-    progress: 100
-  },
-  {
-    code: '02',
-    name: 'Estructura y mampostería',
-    budget: 35600000,
-    executed: 30120000,
-    progress: 82
-  },
-  {
-    code: '03',
-    name: 'Instalaciones eléctricas',
-    budget: 25000000,
-    executed: 26480000,
-    progress: 74
-  },
-  { code: '04', name: 'Hidrosanitarias', budget: 18300000, executed: 12420000, progress: 65 },
-  { code: '05', name: 'Acabados y pintura', budget: 41200000, executed: 22600000, progress: 48 },
-  {
-    code: '06',
-    name: 'Carpintería y ventanería',
-    budget: 26000000,
-    executed: 8750000,
-    progress: 31
-  },
-  {
-    code: '07',
-    name: 'Administración e imprevistos',
-    budget: 17242976,
-    executed: 9240000,
-    progress: 68
-  }
-];
+const statusLabels: Record<StatusCode, string> = {
+  E: 'Ejecutado',
+  R: 'Reprogramado',
+  N: 'No ejecutado',
+  P: 'Pendiente'
+};
 
-const initialMovements: Movement[] = [
-  {
-    id: 1,
-    type: 'Ingreso',
-    concept: 'Anticipo contractual 40%',
-    provider: 'Inversiones del Caribe',
-    amount: 68617190,
-    date: '2026-07-02'
-  },
-  {
-    id: 2,
-    type: 'Ingreso',
-    concept: 'Acta parcial de obra #1',
-    provider: 'Inversiones del Caribe',
-    amount: 42885744,
-    date: '2026-07-22'
-  },
-  {
-    id: 3,
-    type: 'Gasto',
-    concept: 'Cableado y protecciones',
-    provider: 'ElectroCosta S.A.S.',
-    amount: 12840000,
-    date: '2026-07-29'
-  },
-  {
-    id: 4,
-    type: 'Gasto',
-    concept: 'Nómina semanal cuadrilla',
-    provider: 'Personal de obra',
-    amount: 7850000,
-    date: '2026-07-28'
-  },
-  {
-    id: 5,
-    type: 'Gasto',
-    concept: 'Cemento y agregados',
-    provider: 'Materiales El Prado',
-    amount: 9420000,
-    date: '2026-07-24'
-  },
-  {
-    id: 6,
-    type: 'Gasto',
-    concept: 'Carpintería anticipo',
-    provider: 'Aluminios del Norte',
-    amount: 6500000,
-    date: '2026-07-18'
-  }
-];
+function todayInput() {
+  return toInputDate(new Date());
+}
 
-const nav: { label: View; icon: string }[] = [
-  { label: 'Resumen', icon: '¦' },
-  { label: 'Proyectos', icon: '?' },
-  { label: 'Presupuesto', icon: '?' },
-  { label: 'Movimientos', icon: '?' },
-  { label: 'Avance', icon: '?' },
-  { label: 'Documentos', icon: '?' }
-];
+function toInputDate(value: Date | string | null | undefined) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().slice(0, 10);
+}
 
-function Login({ onLogin }: { onLogin: () => void }) {
-  const [error, setError] = useState('');
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    if (form.get('email') === 'admin@gibbor.com.co' && form.get('password') === 'Gibbor2026!') {
-      localStorage.setItem('gibbor-session', 'active');
-      onLogin();
-    } else setError('Los datos no coinciden. Usa las credenciales de demostración.');
-  }
-  return (
-    <main className='g-login'>
-      <section className='g-login-art'>
-        <div className='g-login-brand'>
-          <span>G</span>
-          <div>
-            <strong>GIBBOR</strong>
-            <small>INGENIERÍA · CONSTRUCCIÓN</small>
-          </div>
-        </div>
-        <div className='g-login-copy'>
-          <p>CONTROL DE OBRAS</p>
-          <h1>
-            Decisiones claras.
-            <br />
-            Obras rentables.
-          </h1>
-          <p className='muted'>Presupuesto, ejecución y trazabilidad en un solo lugar.</p>
-        </div>
-        <div className='g-building' aria-hidden='true'>
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <p className='g-login-foot'>GIBBOR S.A.S. · Barranquilla, Colombia</p>
-      </section>
-      <section className='g-login-form'>
-        <form onSubmit={submit}>
-          <div className='g-mobile-brand'>
-            <b>G</b>
-            <strong>GIBBOR</strong>
-          </div>
-          <p className='eyebrow'>BIENVENIDO</p>
-          <h2>Inicia sesión</h2>
-          <p className='muted'>Ingresa al centro de control de tus proyectos.</p>
-          <label>
-            Correo corporativo
-            <input
-              aria-label='Campo de formulario'
-              name='email'
-              type='email'
-              defaultValue='admin@gibbor.com.co'
-              required
-            />
-          </label>
-          <label>
-            Contraseña
-            <input
-              aria-label='Campo de formulario'
-              name='password'
-              type='password'
-              defaultValue='Gibbor2026!'
-              required
-            />
-          </label>
-          {error && <p className='g-error'>{error}</p>}
-          <button className='g-primary' type='submit'>
-            Ingresar al sistema <span>?</span>
-          </button>
-          <p className='g-demo'>Demo: admin@gibbor.com.co · Gibbor2026!</p>
-        </form>
-      </section>
-    </main>
-  );
+function parseDate(value: string) {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function addDays(value: string, days: number) {
+  const date = parseDate(value);
+  date.setDate(date.getDate() + days);
+  return toInputDate(date);
+}
+
+function differenceInDays(from: string, to = todayInput()) {
+  const a = parseDate(from).getTime();
+  const b = parseDate(to).getTime();
+  return Math.ceil((a - b) / 86400000);
+}
+
+function dateLabel(value: string) {
+  if (!value) return 'Sin fecha';
+  return new Intl.DateTimeFormat('es-CO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(parseDate(value));
+}
+
+function normalizeCode(value: FormDataEntryValue | string | null) {
+  return String(value || '')
+    .trim()
+    .padStart(4, '0');
+}
+
+function asNumber(value: FormDataEntryValue | string | number | null | undefined) {
+  const parsed = Number(value || 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function uid(prefix: string) {
+  return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+function equipmentName(item?: Equipment) {
+  if (!item) return 'Equipo no encontrado';
+  return item.name || `Equipo ${item.code}`;
+}
+
+function lastPreventiveDate(code: string, maintenances: Maintenance[]) {
+  return maintenances
+    .filter((item) => item.code === code && item.type === 'PREVENTIVO')
+    .map((item) => item.date)
+    .toSorted()
+    .at(-1);
+}
+
+function nextMaintenanceDate(equipment: Equipment, maintenances: Maintenance[]) {
+  const base = lastPreventiveDate(equipment.code, maintenances) || equipment.openedAt;
+  if (!base || !equipment.frequencyDays) return '';
+  return addDays(base, equipment.frequencyDays);
+}
+
+function mergeImportedState(
+  current: MaintenanceState,
+  imported: ImportedWorkbook
+): MaintenanceState {
+  return {
+    organization: {
+      ...current.organization,
+      ...imported.organization
+    },
+    equipment: imported.equipment || current.equipment,
+    maintenances: imported.maintenances || current.maintenances,
+    calendarMarks: imported.calendarMarks || current.calendarMarks,
+    personnel: imported.personnel || current.personnel,
+    frequencies: imported.frequencies?.length ? imported.frequencies : current.frequencies
+  };
 }
 
 export function GibborApp() {
   const [ready, setReady] = useState(false);
-  const [logged, setLogged] = useState(false);
   const [view, setView] = useState<View>('Resumen');
-  const [projects, setProjects] = useState(initialProjects);
-  const [selected, setSelected] = useState(1);
-  const [chapters, setChapters] = useState(initialChapters);
-  const [movements, setMovements] = useState(initialMovements);
-  const [modal, setModal] = useState<'project' | 'movement' | 'progress' | 'document' | null>(null);
+  const [state, setState] = useState<MaintenanceState>(emptyState);
+  const [selectedCode, setSelectedCode] = useState('');
   const [search, setSearch] = useState('');
   const [toast, setToast] = useState('');
+  const [modal, setModal] = useState<
+    'equipment' | 'maintenance' | 'status' | 'personnel' | 'import' | null
+  >(null);
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+  const [editingMaintenance, setEditingMaintenance] = useState<Maintenance | null>(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
-    setLogged(localStorage.getItem('gibbor-session') === 'active');
-    setReady(true);
-  }, []);
-  useEffect(() => {
-    if (!ready) return;
-    const raw = localStorage.getItem('gibbor-data');
+    const raw = localStorage.getItem(storageKey);
     if (raw) {
       try {
-        const d = JSON.parse(raw);
-        setProjects(d.projects || initialProjects);
-        setMovements(d.movements || initialMovements);
-        setChapters(d.chapters || initialChapters);
-      } catch {}
+        const parsed = JSON.parse(raw) as MaintenanceState;
+        setState({ ...emptyState, ...parsed });
+        setSelectedCode(parsed.equipment?.[0]?.code || '');
+      } catch {
+        setState(emptyState);
+      }
     }
-  }, [ready]);
-  useEffect(() => {
-    if (ready)
-      localStorage.setItem('gibbor-data', JSON.stringify({ projects, movements, chapters }));
-  }, [projects, movements, chapters, ready]);
+    setReady(true);
+  }, []);
 
-  const project = projects.find((item) => item.id === selected) || projects[0];
-  const totals = useMemo(() => {
-    const income = movements.filter((x) => x.type === 'Ingreso').reduce((s, x) => s + x.amount, 0);
-    const expense = movements.filter((x) => x.type === 'Gasto').reduce((s, x) => s + x.amount, 0);
-    const committed = chapters.reduce((s, x) => s + x.executed, 0);
-    const budget = chapters.reduce((s, x) => s + x.budget, 0);
+  useEffect(() => {
+    if (ready) localStorage.setItem(storageKey, JSON.stringify(state));
+  }, [ready, state]);
+
+  useEffect(() => {
+    if (!selectedCode && state.equipment[0]) setSelectedCode(state.equipment[0].code);
+  }, [selectedCode, state.equipment]);
+
+  const selectedEquipment =
+    state.equipment.find((item) => item.code === selectedCode) || state.equipment[0];
+  const filteredEquipment = state.equipment.filter((item) =>
+    [item.code, item.name, item.client, item.location, item.address]
+      .join(' ')
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const metrics = useMemo(() => {
+    const executed = state.calendarMarks.filter((item) => item.status === 'E').length;
+    const reprogrammed = state.calendarMarks.filter((item) => item.status === 'R').length;
+    const notExecuted = state.calendarMarks.filter((item) => item.status === 'N').length;
+    const pendingMarked = state.calendarMarks.filter((item) => item.status === 'P').length;
+    const income = state.maintenances.reduce((sum, item) => sum + item.value, 0);
+    const cost = state.maintenances.reduce((sum, item) => sum + item.laborCost, 0);
+    const preventive = state.maintenances.filter((item) => item.type === 'PREVENTIVO').length;
+    const corrective = state.maintenances.filter((item) => item.type === 'CORRECTIVO').length;
+    const schedule = state.equipment.map((item) => {
+      const next = nextMaintenanceDate(item, state.maintenances);
+      return { equipment: item, next, days: next ? differenceInDays(next) : null };
+    });
+    const dueSoon = schedule.filter(
+      (item) => item.days !== null && item.days >= 0 && item.days <= 15
+    ).length;
+    const overdue = schedule.filter((item) => item.days !== null && item.days < 0).length;
+
     return {
+      executed,
+      reprogrammed,
+      notExecuted,
+      pendingMarked,
       income,
-      expense,
-      committed,
-      budget,
-      balance: income - expense,
-      utility: project.budget - committed
+      cost,
+      utility: income - cost,
+      preventive,
+      corrective,
+      dueSoon,
+      overdue,
+      compliance: executed + notExecuted ? executed / (executed + notExecuted) : 0,
+      effectiveness: executed + reprogrammed ? executed / (executed + reprogrammed) : 0,
+      schedule
     };
-  }, [movements, chapters, project]);
+  }, [state]);
+
   function notify(message: string) {
     setToast(message);
-    setTimeout(() => setToast(''), 2600);
+    window.setTimeout(() => setToast(''), 2800);
+  }
+
+  function upsertEquipment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const f = new FormData(event.currentTarget);
+    const item: Equipment = {
+      code: normalizeCode(f.get('code')),
+      name: String(f.get('name') || '').trim(),
+      brand: String(f.get('brand') || '').trim(),
+      client: String(f.get('client') || '').trim(),
+      features: String(f.get('features') || '').trim(),
+      model: String(f.get('model') || '').trim(),
+      location: String(f.get('location') || '').trim(),
+      capacity: String(f.get('capacity') || '').trim(),
+      address: String(f.get('address') || '').trim(),
+      phone: String(f.get('phone') || '').trim(),
+      openedAt: String(f.get('openedAt') || todayInput()),
+      frequencyDays: asNumber(f.get('frequencyDays')) || 120,
+      responsible: String(f.get('responsible') || '').trim()
+    };
+
+    setState((current) => {
+      const exists = current.equipment.some((equipment) => equipment.code === item.code);
+      return {
+        ...current,
+        equipment: exists
+          ? current.equipment.map((equipment) => (equipment.code === item.code ? item : equipment))
+          : [...current.equipment, item].toSorted((a, b) => a.code.localeCompare(b.code))
+      };
+    });
+    setSelectedCode(item.code);
+    setEditingEquipment(null);
+    setModal(null);
+    notify(editingEquipment ? 'Equipo actualizado' : 'Equipo cargado');
+  }
+
+  function deleteEquipment(code: string) {
+    setState((current) => ({
+      ...current,
+      equipment: current.equipment.filter((item) => item.code !== code),
+      maintenances: current.maintenances.filter((item) => item.code !== code),
+      calendarMarks: current.calendarMarks.filter((item) => item.code !== code)
+    }));
+    if (selectedCode === code) setSelectedCode('');
+    notify('Equipo eliminado con su trazabilidad asociada');
+  }
+
+  function upsertMaintenance(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const f = new FormData(event.currentTarget);
+    const value = asNumber(f.get('value'));
+    const laborCost = asNumber(f.get('laborCost'));
+    const item: Maintenance = {
+      id: editingMaintenance?.id || uid('mto'),
+      date: String(f.get('date') || todayInput()),
+      code: normalizeCode(f.get('code')),
+      type: String(f.get('type') || 'PREVENTIVO') as MaintenanceType,
+      description: String(f.get('description') || '').trim(),
+      value,
+      laborCost,
+      utility: value - laborCost,
+      personnel: String(f.get('personnel') || '').trim()
+    };
+
+    setState((current) => {
+      const maintenances = editingMaintenance
+        ? current.maintenances.map((entry) => (entry.id === item.id ? item : entry))
+        : [item, ...current.maintenances];
+      const calendarMarks =
+        item.type === 'PREVENTIVO'
+          ? upsertMark(current.calendarMarks, {
+              id: uid('mark'),
+              code: item.code,
+              date: item.date,
+              status: 'E',
+              note: item.description || 'Mantenimiento preventivo ejecutado'
+            })
+          : current.calendarMarks;
+      return { ...current, maintenances, calendarMarks };
+    });
+    setSelectedCode(item.code);
+    setEditingMaintenance(null);
+    setModal(null);
+    notify(editingMaintenance ? 'Registro modificado' : 'Registro de mantenimiento guardado');
+  }
+
+  function deleteMaintenance(id: string) {
+    setState((current) => ({
+      ...current,
+      maintenances: current.maintenances.filter((item) => item.id !== id)
+    }));
+    notify('Registro eliminado');
+  }
+
+  function registerStatus(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const f = new FormData(event.currentTarget);
+    const status = String(f.get('status') || 'P') as StatusCode;
+    const code = normalizeCode(f.get('code'));
+    const date = String(f.get('date') || todayInput());
+    const description = String(f.get('note') || '').trim();
+    const value = asNumber(f.get('value'));
+    const laborCost = asNumber(f.get('laborCost'));
+    const personnel = String(f.get('personnel') || '').trim();
+
+    setState((current) => {
+      const calendarMarks = upsertMark(current.calendarMarks, {
+        id: uid('mark'),
+        code,
+        date,
+        status,
+        note: description
+      });
+      const maintenances =
+        status === 'E'
+          ? [
+              {
+                id: uid('mto'),
+                code,
+                date,
+                type: 'PREVENTIVO' as const,
+                description: description || 'Mantenimiento preventivo ejecutado desde calendario',
+                value,
+                laborCost,
+                utility: value - laborCost,
+                personnel
+              },
+              ...current.maintenances
+            ]
+          : current.maintenances;
+      return { ...current, calendarMarks, maintenances };
+    });
+    setSelectedCode(code);
+    setModal(null);
+    notify(status === 'E' ? 'Ejecucion registrada' : 'Estado actualizado en calendario');
+  }
+
+  function upsertPersonnel(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = String(new FormData(event.currentTarget).get('name') || '').trim();
+    if (!name) return;
+    setState((current) => ({
+      ...current,
+      personnel: Array.from(new Set([...current.personnel, name])).toSorted()
+    }));
+    setModal(null);
+    notify('Personal agregado');
+  }
+
+  async function importWorkbook(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      const response = await fetch('/api/gibbor/import-xlsm', { method: 'POST', body });
+      if (!response.ok) throw new Error('No se pudo leer el archivo');
+      const imported = (await response.json()) as ImportedWorkbook;
+      setState((current) => mergeImportedState(current, imported));
+      setSelectedCode(imported.equipment?.[0]?.code || selectedCode);
+      setModal(null);
+      notify('Macro importada y convertida en datos operativos');
+    } catch {
+      notify('No se pudo importar la macro. Revisa que sea el archivo GIBBOR .xlsm/.xlsx');
+    } finally {
+      setImporting(false);
+      event.target.value = '';
+    }
+  }
+
+  async function exportWorkbook() {
+    const response = await fetch('/api/gibbor/export-xlsx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    });
+    if (!response.ok) {
+      notify('No se pudo exportar el reporte');
+      return;
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'gibbor-control-mantenimiento.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('Reporte Excel generado');
   }
 
   if (!ready) return null;
-  if (!logged) return <Login onLogin={() => setLogged(true)} />;
-
-  function addProject(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const f = new FormData(event.currentTarget);
-    const item: Project = {
-      id: Date.now(),
-      code: String(f.get('code')),
-      name: String(f.get('name')),
-      client: String(f.get('client')),
-      city: String(f.get('city')),
-      budget: Number(f.get('budget')),
-      progress: 0,
-      status: 'Planeación'
-    };
-    setProjects((p) => [...p, item]);
-    setSelected(item.id);
-    setModal(null);
-    setView('Proyectos');
-    notify('Proyecto creado correctamente');
-  }
-  function addMovement(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const f = new FormData(event.currentTarget);
-    setMovements((p) => [
-      {
-        id: Date.now(),
-        type: String(f.get('type')) as Movement['type'],
-        concept: String(f.get('concept')),
-        provider: String(f.get('provider')),
-        amount: Number(f.get('amount')),
-        date: String(f.get('date'))
-      },
-      ...p
-    ]);
-    setModal(null);
-    notify('Movimiento registrado');
-  }
-  function addProgress(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const f = new FormData(event.currentTarget);
-    const value = Number(f.get('progress'));
-    setProjects((p) =>
-      p.map((x) =>
-        x.id === selected
-          ? { ...x, progress: value, status: value === 100 ? 'Finalizado' : 'En ejecución' }
-          : x
-      )
-    );
-    setModal(null);
-    notify('Avance actualizado');
-  }
-  function logout() {
-    localStorage.removeItem('gibbor-session');
-    setLogged(false);
-  }
-
-  const title = view === 'Resumen' ? 'Centro de control' : view;
-  const subtitle =
-    view === 'Resumen'
-      ? 'Visión general de la operación de GIBBOR S.A.S.'
-      : 'Proyecto activo: ' + project.name;
 
   return (
     <div className='g-shell'>
@@ -375,54 +496,51 @@ export function GibborApp() {
           <span>G</span>
           <div>
             <strong>GIBBOR</strong>
-            <small>CONTROL OBRAS</small>
+            <small>MANTENIMIENTO</small>
           </div>
         </div>
         <nav>
-          <p>GESTIÓN</p>
+          <p>MACRO WEB</p>
           {nav.map((item) => (
             <button
               key={item.label}
               className={view === item.label ? 'active' : ''}
               onClick={() => setView(item.label)}
             >
-              <i>{item.icon}</i>
+              <i>{item.caption}</i>
               {item.label}
-              {item.label === 'Presupuesto' && <b>1</b>}
+              {item.label === 'Programacion' && metrics.dueSoon + metrics.overdue > 0 && (
+                <b>{metrics.dueSoon + metrics.overdue}</b>
+              )}
             </button>
           ))}
         </nav>
         <div className='g-sidebar-bottom'>
           <div>
-            <span>AM</span>
+            <span>JC</span>
             <p>
-              <strong>Andrés Martínez</strong>
-              <small>Administrador</small>
+              <strong>{state.organization.manager}</strong>
+              <small>Gerente · {state.organization.city}</small>
             </p>
           </div>
-          <button onClick={logout} title='Cerrar sesión'>
-            ?
-          </button>
         </div>
       </aside>
       <main className='g-main'>
         <header className='g-topbar'>
-          <button className='g-menu'>?</button>
+          <button className='g-menu'>Menu</button>
           <div className='g-search'>
-            ?
+            <span>Buscar</span>
             <input
-              aria-label='Campo de formulario'
+              aria-label='Buscar'
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder='Buscar proyectos, documentos...'
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder='Codigo, cliente, equipo, direccion...'
             />
           </div>
           <div className='g-top-actions'>
-            <button>?</button>
-            <button className='bell'>
-              ?<i />
-            </button>
-            <a href='https://wa.me/573001234567?text=Hola%20equipo%20GIBBOR' target='_blank'>
+            <button onClick={() => setModal('import')}>Importar macro</button>
+            <button onClick={exportWorkbook}>Exportar Excel</button>
+            <a href='https://wa.me/573016107912?text=Hola%20equipo%20GIBBOR' target='_blank'>
               WhatsApp
             </a>
           </div>
@@ -430,204 +548,206 @@ export function GibborApp() {
         <div className='g-content'>
           <div className='g-heading'>
             <div>
-              <p className='eyebrow'>DOMINGO, 2 DE AGOSTO DE 2026</p>
-              <h1>{title}</h1>
-              <p>{subtitle}</p>
+              <p className='eyebrow'>
+                {state.organization.company} · {state.organization.city}
+              </p>
+              <h1>{view === 'Resumen' ? 'Control de mantenimiento' : view}</h1>
+              <p>
+                La plataforma replica la macro: equipos, programacion, estados E/R/N/P, registros,
+                hoja de vida, resumen y exportacion.
+              </p>
             </div>
             <div className='g-actions'>
-              {view !== 'Resumen' && (
+              {state.equipment.length > 0 && view !== 'Equipos' && (
                 <select
-                  aria-label='Selector de formulario'
-                  value={selected}
-                  onChange={(e) => setSelected(Number(e.target.value))}
+                  aria-label='Equipo seleccionado'
+                  value={selectedEquipment?.code || ''}
+                  onChange={(event) => setSelectedCode(event.target.value)}
                 >
-                  {projects.map((p) => (
-                    <option value={p.id} key={p.id}>
-                      {p.code} · {p.name}
+                  {state.equipment.map((item) => (
+                    <option value={item.code} key={item.code}>
+                      {item.code} · {equipmentName(item)}
                     </option>
                   ))}
                 </select>
               )}
               <button
                 className='g-secondary'
-                onClick={() => notify('Reporte preparado para exportación')}
+                onClick={() => {
+                  setEditingEquipment(null);
+                  setModal('equipment');
+                }}
               >
-                ? Exportar
+                Cargar equipo
               </button>
               <button
                 className='g-primary'
-                onClick={() =>
-                  setModal(
-                    view === 'Proyectos'
-                      ? 'project'
-                      : view === 'Avance'
-                        ? 'progress'
-                        : view === 'Documentos'
-                          ? 'document'
-                          : 'movement'
-                  )
-                }
+                onClick={() => {
+                  setEditingMaintenance(null);
+                  setModal(view === 'Calendario' ? 'status' : 'maintenance');
+                }}
               >
-                +{' '}
-                {view === 'Proyectos'
-                  ? 'Nuevo proyecto'
-                  : view === 'Avance'
-                    ? 'Registrar avance'
-                    : view === 'Documentos'
-                      ? 'Subir soporte'
-                      : 'Registrar movimiento'}
+                {view === 'Calendario' ? 'Registrar ejecucion' : 'Nuevo registro'}
               </button>
             </div>
           </div>
-          {view === 'Resumen' && (
-            <Dashboard projects={projects} totals={totals} setView={setView} />
-          )}
-          {view === 'Proyectos' && (
-            <Projects
-              projects={projects.filter((p) =>
-                (p.name + p.client + p.code).toLowerCase().includes(search.toLowerCase())
-              )}
-              onSelect={(id) => {
-                setSelected(id);
-                setView('Presupuesto');
-              }}
+
+          {state.equipment.length === 0 ? (
+            <EmptyState
+              onImport={() => setModal('import')}
+              onNewEquipment={() => setModal('equipment')}
             />
+          ) : (
+            <>
+              {view === 'Resumen' && (
+                <Summary
+                  state={state}
+                  metrics={metrics}
+                  setView={setView}
+                  onStatus={() => setModal('status')}
+                />
+              )}
+              {view === 'Equipos' && (
+                <EquipmentTable
+                  equipment={filteredEquipment}
+                  onSelect={(code) => {
+                    setSelectedCode(code);
+                    setView('Hoja de Vida');
+                  }}
+                  onEdit={(item) => {
+                    setEditingEquipment(item);
+                    setModal('equipment');
+                  }}
+                  onDelete={deleteEquipment}
+                />
+              )}
+              {view === 'Programacion' && (
+                <ProgrammingTable
+                  schedule={metrics.schedule}
+                  maintenances={state.maintenances}
+                  onSelect={(code) => {
+                    setSelectedCode(code);
+                    setView('Hoja de Vida');
+                  }}
+                  onRegister={(code) => {
+                    setSelectedCode(code);
+                    setModal('status');
+                  }}
+                />
+              )}
+              {view === 'Registro' && (
+                <MaintenanceTable
+                  equipment={state.equipment}
+                  maintenances={state.maintenances}
+                  onEdit={(item) => {
+                    setEditingMaintenance(item);
+                    setModal('maintenance');
+                  }}
+                  onDelete={deleteMaintenance}
+                />
+              )}
+              {view === 'Calendario' && (
+                <CalendarView
+                  equipment={filteredEquipment}
+                  maintenances={state.maintenances}
+                  marks={state.calendarMarks}
+                  onRegister={(code) => {
+                    setSelectedCode(code);
+                    setModal('status');
+                  }}
+                />
+              )}
+              {view === 'Hoja de Vida' && selectedEquipment && (
+                <LifeSheet
+                  equipment={selectedEquipment}
+                  maintenances={state.maintenances.filter(
+                    (item) => item.code === selectedEquipment.code
+                  )}
+                  marks={state.calendarMarks.filter((item) => item.code === selectedEquipment.code)}
+                />
+              )}
+              {view === 'Personal' && (
+                <PersonnelView personnel={state.personnel} onNew={() => setModal('personnel')} />
+              )}
+            </>
           )}
-          {view === 'Presupuesto' && <Budget chapters={chapters} />}
-          {view === 'Movimientos' && <Movements movements={movements} />}
-          {view === 'Avance' && <Progress project={project} chapters={chapters} />}
-          {view === 'Documentos' && <Documents onUpload={() => setModal('document')} />}
         </div>
       </main>
-      {toast && <div className='g-toast'>? {toast}</div>}
+      {toast && <div className='g-toast'>{toast}</div>}
       {modal && (
         <div className='g-modal-backdrop' role='presentation'>
-          <div className='g-modal' role='dialog' aria-modal='true' aria-label='Formulario'>
-            <button className='g-close' onClick={() => setModal(null)}>
-              ×
+          <div
+            className='g-modal g-modal-wide'
+            role='dialog'
+            aria-modal='true'
+            aria-label='Formulario'
+          >
+            <button
+              className='g-close'
+              onClick={() => {
+                setModal(null);
+                setEditingEquipment(null);
+                setEditingMaintenance(null);
+              }}
+            >
+              x
             </button>
-            {modal === 'project' && (
-              <Form title='Nuevo proyecto' onSubmit={addProject}>
-                <label>
-                  Código
+            {modal === 'import' && (
+              <Panel title='Importar macro GIBBOR'>
+                <div className='g-import-box'>
+                  <strong>Sube el archivo .xlsm o .xlsx</strong>
+                  <p>
+                    La app lee equipos, personal, registros de mantenimiento, programacion y estados
+                    E/R/N/P. Despues puedes seguir trabajando desde la plataforma.
+                  </p>
                   <input
-                    aria-label='Campo de formulario'
-                    name='code'
-                    defaultValue={'GIB-0' + (projects.length + 23)}
-                    required
+                    aria-label='Importar macro'
+                    type='file'
+                    accept='.xlsm,.xlsx'
+                    onChange={importWorkbook}
+                    disabled={importing}
                   />
-                </label>
-                <label>
-                  Nombre del proyecto
-                  <input aria-label='Campo de formulario' name='name' required />
-                </label>
-                <label>
-                  Cliente
-                  <input aria-label='Campo de formulario' name='client' required />
-                </label>
-                <div className='g-fields'>
-                  <label>
-                    Ciudad
-                    <input aria-label='Campo de formulario' name='city' required />
-                  </label>
-                  <label>
-                    Valor contrato
-                    <input aria-label='Campo de formulario' name='budget' type='number' required />
-                  </label>
+                  {importing && <small>Convirtiendo macro en datos...</small>}
                 </div>
-              </Form>
+              </Panel>
             )}
-            {modal === 'movement' && (
-              <Form title='Registrar movimiento' onSubmit={addMovement}>
-                <label>
-                  Tipo
-                  <select aria-label='Selector de formulario' name='type'>
-                    <option>Gasto</option>
-                    <option>Ingreso</option>
-                  </select>
-                </label>
-                <label>
-                  Concepto
-                  <input aria-label='Campo de formulario' name='concept' required />
-                </label>
-                <label>
-                  Tercero / proveedor
-                  <input aria-label='Campo de formulario' name='provider' required />
-                </label>
-                <div className='g-fields'>
+            {modal === 'equipment' && (
+              <EquipmentForm
+                equipment={editingEquipment}
+                frequencies={state.frequencies}
+                personnel={state.personnel}
+                onSubmit={upsertEquipment}
+              />
+            )}
+            {modal === 'maintenance' && (
+              <MaintenanceForm
+                entry={editingMaintenance}
+                selectedCode={selectedEquipment?.code || ''}
+                equipment={state.equipment}
+                personnel={state.personnel}
+                onSubmit={upsertMaintenance}
+              />
+            )}
+            {modal === 'status' && (
+              <StatusForm
+                selectedCode={selectedEquipment?.code || ''}
+                equipment={state.equipment}
+                personnel={state.personnel}
+                onSubmit={registerStatus}
+              />
+            )}
+            {modal === 'personnel' && (
+              <Panel title='Nuevo tecnico / responsable'>
+                <form onSubmit={upsertPersonnel}>
                   <label>
-                    Valor
-                    <input aria-label='Campo de formulario' name='amount' type='number' required />
+                    Nombre
+                    <input aria-label='Nombre del personal' name='name' required />
                   </label>
-                  <label>
-                    Fecha
-                    <input
-                      aria-label='Campo de formulario'
-                      name='date'
-                      type='date'
-                      defaultValue='2026-08-02'
-                      required
-                    />
-                  </label>
-                </div>
-              </Form>
-            )}
-            {modal === 'progress' && (
-              <Form title='Registrar avance físico' onSubmit={addProgress}>
-                <p className='muted'>
-                  {project.name} · avance actual {project.progress}%
-                </p>
-                <label>
-                  Nuevo avance (%)
-                  <input
-                    aria-label='Campo de formulario'
-                    name='progress'
-                    type='number'
-                    min='0'
-                    max='100'
-                    defaultValue={project.progress}
-                    required
-                  />
-                </label>
-                <label>
-                  Observación
-                  <textarea
-                    aria-label='Descripci�n'
-                    name='note'
-                    rows={3}
-                    placeholder='Actividades ejecutadas, novedades...'
-                  />
-                </label>
-              </Form>
-            )}
-            {modal === 'document' && (
-              <Form
-                title='Subir soporte'
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setModal(null);
-                  notify('Soporte agregado a la trazabilidad');
-                }}
-              >
-                <label>
-                  Tipo
-                  <select aria-label='Selector de formulario'>
-                    <option>Factura</option>
-                    <option>Comprobante de egreso</option>
-                    <option>Acta de obra</option>
-                    <option>Fotografía</option>
-                    <option>Contrato</option>
-                  </select>
-                </label>
-                <label>
-                  Archivo
-                  <input aria-label='Campo de formulario' type='file' required />
-                </label>
-                <label>
-                  Descripción
-                  <textarea aria-label='Descripci�n' rows={3} />
-                </label>
-              </Form>
+                  <div className='g-form-actions'>
+                    <button className='g-primary'>Guardar</button>
+                  </div>
+                </form>
+              </Panel>
             )}
           </div>
         </div>
@@ -636,154 +756,138 @@ export function GibborApp() {
   );
 }
 
-function Form({
-  title,
-  onSubmit,
-  children
+function upsertMark(marks: CalendarMark[], mark: CalendarMark) {
+  const exists = marks.some((item) => item.code === mark.code && item.date === mark.date);
+  return exists
+    ? marks.map((item) =>
+        item.code === mark.code && item.date === mark.date
+          ? { ...item, status: mark.status, note: mark.note }
+          : item
+      )
+    : [mark, ...marks];
+}
+
+function EmptyState({
+  onImport,
+  onNewEquipment
 }: {
-  title: string;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
-  children: React.ReactNode;
+  onImport: () => void;
+  onNewEquipment: () => void;
 }) {
   return (
-    <form onSubmit={onSubmit}>
-      <p className='eyebrow'>GIBBOR CONTROL OBRAS</p>
-      <h2>{title}</h2>
-      {children}
-      <div className='g-form-actions'>
-        <button type='button' className='g-secondary' onClick={() => history.back()}>
-          Cancelar
+    <section className='g-card g-empty-state'>
+      <p className='eyebrow'>SIN DATOS DEMO</p>
+      <h2>La plataforma esta lista para operar con datos reales.</h2>
+      <p>
+        Importa la macro existente o carga el primer equipo manualmente. Desde ese momento la app
+        calcula programacion, dias faltantes, estados, utilidad y hoja de vida.
+      </p>
+      <div className='g-actions'>
+        <button className='g-primary' onClick={onImport}>
+          Importar macro
         </button>
-        <button className='g-primary'>Guardar registro</button>
+        <button className='g-secondary' onClick={onNewEquipment}>
+          Cargar equipo manual
+        </button>
       </div>
-    </form>
+    </section>
   );
 }
 
-function Dashboard({
-  projects,
-  totals,
-  setView
+function Summary({
+  state,
+  metrics,
+  setView,
+  onStatus
 }: {
-  projects: Project[];
-  totals: {
-    income: number;
-    expense: number;
-    committed: number;
-    budget: number;
-    balance: number;
-    utility: number;
-  };
-  setView: (v: View) => void;
+  state: MaintenanceState;
+  metrics: ReturnType<typeof buildMetricsPlaceholder>;
+  setView: (view: View) => void;
+  onStatus: () => void;
 }) {
   const cards = [
-    [
-      'Valor contratado',
-      projects.reduce((s, p) => s + p.budget, 0),
-      '4 proyectos en portafolio',
-      'navy'
-    ],
-    ['Ingresos recibidos', totals.income, '65% del contrato activo', 'green'],
-    ['Egresos pagados', totals.expense, '35% de los ingresos', 'orange'],
-    ['Saldo disponible', totals.balance, 'Caja del proyecto activo', 'blue']
+    ['Equipos activos', state.equipment.length, 'Base de equipos y clientes', 'navy'],
+    ['Mantenimientos', state.maintenances.length, 'Preventivos y correctivos', 'green'],
+    ['Por vencer', metrics.dueSoon, 'Proximos 15 dias', 'orange'],
+    ['Vencidos', metrics.overdue, 'Requieren gestion', 'blue']
   ];
+
   return (
     <>
       <section className='g-kpis'>
-        {cards.map((c) => (
-          <article key={c[0]}>
-            <div className={'g-kpi-icon ' + c[3]}>$</div>
+        {cards.map((card) => (
+          <article key={card[0]}>
+            <div className={'g-kpi-icon ' + card[3]}>{card[0].toString().slice(0, 2)}</div>
             <div>
-              <p>{c[0]}</p>
-              <h2>{money.format(Number(c[1]))}</h2>
-              <small>{c[2]}</small>
+              <p>{card[0]}</p>
+              <h2>{card[1]}</h2>
+              <small>{card[2]}</small>
             </div>
           </article>
         ))}
       </section>
       <section className='g-dashboard-grid'>
-        <article className='g-card g-chart'>
+        <article className='g-card'>
           <div className='g-card-head'>
             <div>
-              <h3>Flujo financiero</h3>
-              <p>Ingresos vs. egresos últimos 6 meses</p>
+              <h3>Indicadores de la macro</h3>
+              <p>Cumplimiento, efectividad y estados E/R/N/P</p>
             </div>
-            <button>Últimos 6 meses?</button>
+            <button onClick={onStatus}>Registrar ejecucion</button>
           </div>
-          <div className='g-chart-area'>
-            <div className='g-axis'>
-              <span>$120M</span>
-              <span>$90M</span>
-              <span>$60M</span>
-              <span>$30M</span>
-              <span>$0</span>
+          <div className='g-mini-kpis'>
+            <div>
+              <p>Cumplimiento</p>
+              <strong>{percent.format(metrics.compliance)}</strong>
             </div>
-            <svg viewBox='0 0 620 210' preserveAspectRatio='none'>
-              <defs>
-                <linearGradient id='area' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='0' stopColor='#1d5f91' stopOpacity='.25' />
-                  <stop offset='1' stopColor='#1d5f91' stopOpacity='0' />
-                </linearGradient>
-              </defs>
-              <path
-                className='area'
-                d='M0,175 C55,150 70,120 120,128 S190,83 245,96 S315,47 365,67 S435,32 490,45 S555,12 620,28 L620,210 L0,210Z'
-              />
-              <path
-                className='line income'
-                d='M0,175 C55,150 70,120 120,128 S190,83 245,96 S315,47 365,67 S435,32 490,45 S555,12 620,28'
-              />
-              <path
-                className='line expense'
-                d='M0,191 C70,180 65,155 120,168 S190,125 245,141 S310,108 365,115 S430,89 490,96 S560,70 620,78'
-              />
-            </svg>
-            <div className='g-months'>
-              <span>Mar</span>
-              <span>Abr</span>
-              <span>May</span>
-              <span>Jun</span>
-              <span>Jul</span>
-              <span>Ago</span>
+            <div>
+              <p>Efectividad</p>
+              <strong>{percent.format(metrics.effectiveness)}</strong>
+            </div>
+            <div>
+              <p>Ejecutados</p>
+              <strong className='positive'>{metrics.executed}</strong>
+            </div>
+            <div>
+              <p>No ejecutados</p>
+              <strong className='negative'>{metrics.notExecuted}</strong>
             </div>
           </div>
-          <div className='g-legend'>
-            <span>
-              <i className='in' />
-              Ingresos
-            </span>
-            <span>
-              <i className='out' />
-              Egresos
-            </span>
+          <div className='g-status-row'>
+            {(['E', 'R', 'N', 'P'] as StatusCode[]).map((status) => (
+              <span className={'g-status ' + statusClass(status)} key={status}>
+                {status} · {statusLabels[status]}
+              </span>
+            ))}
           </div>
         </article>
         <article className='g-card'>
           <div className='g-card-head'>
             <div>
-              <h3>Estado de proyectos</h3>
-              <p>Avance físico consolidado</p>
+              <h3>Resumen economico</h3>
+              <p>Replica Registro Mto y RESUMEN</p>
             </div>
-            <button onClick={() => setView('Proyectos')}>Ver todos ?</button>
+            <button onClick={() => setView('Registro')}>Ver registro</button>
           </div>
-          <div className='g-project-list'>
-            {projects.map((p) => (
-              <div key={p.id}>
-                <div className='g-project-row'>
-                  <span className='g-project-icon'>?</span>
-                  <p>
-                    <strong>{p.name}</strong>
-                    <small>
-                      {p.city} · {p.code}
-                    </small>
-                  </p>
-                  <b>{p.progress}%</b>
-                </div>
-                <div className='g-progress'>
-                  <i style={{ width: p.progress + '%' }} />
-                </div>
-              </div>
-            ))}
+          <div className='g-mini-kpis'>
+            <div>
+              <p>Ingresos</p>
+              <strong>{money.format(metrics.income)}</strong>
+            </div>
+            <div>
+              <p>MO + insumos</p>
+              <strong>{money.format(metrics.cost)}</strong>
+            </div>
+            <div>
+              <p>Utilidad</p>
+              <strong className={metrics.utility >= 0 ? 'positive' : 'negative'}>
+                {money.format(metrics.utility)}
+              </strong>
+            </div>
+            <div>
+              <p>Correctivos</p>
+              <strong>{metrics.corrective}</strong>
+            </div>
           </div>
         </article>
       </section>
@@ -791,109 +895,155 @@ function Dashboard({
         <article className='g-card'>
           <div className='g-card-head'>
             <div>
-              <h3>Indicadores del proyecto activo</h3>
-              <p>Los Corales · corte al 2 de agosto</p>
+              <h3>Proximos mantenimientos</h3>
+              <p>Calculados desde ultimo preventivo + frecuencia</p>
             </div>
+            <button onClick={() => setView('Programacion')}>Abrir programacion</button>
           </div>
-          <div className='g-mini-kpis'>
-            <div>
-              <p>Presupuesto</p>
-              <strong>{compact.format(totals.budget)}</strong>
-            </div>
-            <div>
-              <p>Comprometido</p>
-              <strong>{compact.format(totals.committed)}</strong>
-            </div>
-            <div>
-              <p>Utilidad estimada</p>
-              <strong className='positive'>{compact.format(totals.utility)}</strong>
-            </div>
-            <div>
-              <p>Avance físico</p>
-              <strong>68%</strong>
-            </div>
-          </div>
+          <SchedulePreview schedule={metrics.schedule.slice(0, 7)} />
         </article>
         <article className='g-card g-alert'>
           <div className='g-card-head'>
             <div>
-              <h3>Alertas y novedades</h3>
-              <p>Requieren tu atención</p>
-            </div>
-            <b>2</b>
-          </div>
-          <div className='g-alert-row'>
-            <span>!</span>
-            <div>
-              <strong>Sobrecosto en instalaciones eléctricas</strong>
-              <p>Ejecución al 105,9% · excede $1.480.000</p>
+              <h3>Distribucion utilidad</h3>
+              <p>Segun porcentajes de la macro RESUMEN</p>
             </div>
           </div>
-          <div className='g-alert-row info'>
-            <span>i</span>
-            <div>
-              <strong>Acta parcial pendiente de soporte</strong>
-              <p>Ingreso del 22 de julio · $42.885.744</p>
+          {[
+            ['GIBBOR Soluciones', 0.3],
+            ['Representante legal', 0.4],
+            ['Coordinacion administrativa', 0.15],
+            ['Gerente', 0.075],
+            ['Analista RRHH', 0.075]
+          ].map(([label, rate]) => (
+            <div className='g-alert-row info' key={String(label)}>
+              <span>{Math.round(Number(rate) * 100)}%</span>
+              <div>
+                <strong>{label}</strong>
+                <p>{money.format(metrics.utility * Number(rate))}</p>
+              </div>
             </div>
-          </div>
+          ))}
         </article>
       </section>
     </>
   );
 }
 
-function Projects({ projects, onSelect }: { projects: Project[]; onSelect: (id: number) => void }) {
+function buildMetricsPlaceholder() {
+  return {
+    executed: 0,
+    reprogrammed: 0,
+    notExecuted: 0,
+    pendingMarked: 0,
+    income: 0,
+    cost: 0,
+    utility: 0,
+    preventive: 0,
+    corrective: 0,
+    dueSoon: 0,
+    overdue: 0,
+    compliance: 0,
+    effectiveness: 0,
+    schedule: [] as { equipment: Equipment; next: string; days: number | null }[]
+  };
+}
+
+function SchedulePreview({
+  schedule
+}: {
+  schedule: { equipment: Equipment; next: string; days: number | null }[];
+}) {
+  return (
+    <div className='g-project-list'>
+      {schedule.map((item) => (
+        <div key={item.equipment.code}>
+          <div className='g-project-row'>
+            <span className='g-project-icon'>{item.equipment.code}</span>
+            <p>
+              <strong>{equipmentName(item.equipment)}</strong>
+              <small>
+                {dateLabel(item.next)} · {item.days === null ? 'sin calculo' : item.days + ' dias'}
+              </small>
+            </p>
+            <b className={item.days !== null && item.days < 0 ? 'negative' : ''}>
+              {item.days !== null && item.days < 0 ? 'Vencido' : 'OK'}
+            </b>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EquipmentTable({
+  equipment,
+  onSelect,
+  onEdit,
+  onDelete
+}: {
+  equipment: Equipment[];
+  onSelect: (code: string) => void;
+  onEdit: (item: Equipment) => void;
+  onDelete: (code: string) => void;
+}) {
   return (
     <section className='g-card g-table-card'>
       <table>
         <thead>
           <tr>
-            <th>Proyecto</th>
+            <th>Codigo</th>
+            <th>Equipo</th>
             <th>Cliente</th>
-            <th>Ubicación</th>
-            <th>Contrato</th>
-            <th>Avance</th>
-            <th>Estado</th>
+            <th>Ubicacion</th>
+            <th>Frecuencia</th>
+            <th>Contacto</th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {projects.map((p) => (
-            <tr key={p.id}>
+          {equipment.map((item) => (
+            <tr key={item.code}>
               <td>
-                <strong>{p.name}</strong>
-                <small>{p.code}</small>
+                <strong>{item.code}</strong>
               </td>
-              <td>{p.client}</td>
-              <td>{p.city}</td>
-              <td>{money.format(p.budget)}</td>
               <td>
-                <div className='g-cell-progress'>
-                  <div
-                    className='track'
-                    role='progressbar'
-                    aria-label='Avance del proyecto'
-                    aria-valuenow={p.progress}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
+                <strong>{equipmentName(item)}</strong>
+                <small>
+                  {item.brand} · {item.capacity}
+                </small>
+              </td>
+              <td>{item.client}</td>
+              <td>
+                {item.location}
+                <small>{item.address}</small>
+              </td>
+              <td>{item.frequencyDays} dias</td>
+              <td>{item.phone}</td>
+              <td>
+                <div className='g-row-actions'>
+                  <button
+                    type='button'
+                    aria-label={`Abrir hoja de vida del equipo ${item.code}`}
+                    onClick={() => onSelect(item.code)}
                   >
-                    <b style={{ width: p.progress + '%' }} />
-                  </div>
-                  <span>{p.progress}%</span>
+                    HV
+                  </button>
+                  <button
+                    type='button'
+                    aria-label={`Modificar equipo ${item.code}`}
+                    onClick={() => onEdit(item)}
+                  >
+                    Modificar
+                  </button>
+                  <button
+                    type='button'
+                    aria-label={`Eliminar equipo ${item.code}`}
+                    onClick={() => onDelete(item.code)}
+                  >
+                    Eliminar
+                  </button>
                 </div>
-              </td>
-              <td>
-                <span
-                  className={
-                    'g-status ' +
-                    (p.status === 'Finalizado' ? 'done' : p.status === 'Planeación' ? 'plan' : '')
-                  }
-                >
-                  {p.status}
-                </span>
-              </td>
-              <td>
-                <button onClick={() => onSelect(p.id)}>Ver ?</button>
               </td>
             </tr>
           ))}
@@ -903,107 +1053,145 @@ function Projects({ projects, onSelect }: { projects: Project[]; onSelect: (id: 
   );
 }
 
-function Budget({ chapters }: { chapters: Chapter[] }) {
-  const total = chapters.reduce((s, c) => s + c.budget, 0),
-    used = chapters.reduce((s, c) => s + c.executed, 0);
+function ProgrammingTable({
+  schedule,
+  maintenances,
+  onSelect,
+  onRegister
+}: {
+  schedule: { equipment: Equipment; next: string; days: number | null }[];
+  maintenances: Maintenance[];
+  onSelect: (code: string) => void;
+  onRegister: (code: string) => void;
+}) {
   return (
-    <>
-      <section className='g-summary-strip'>
-        <div>
-          <p>Presupuesto total</p>
-          <strong>{money.format(total)}</strong>
-        </div>
-        <div>
-          <p>Ejecutado / comprometido</p>
-          <strong>{money.format(used)}</strong>
-        </div>
-        <div>
-          <p>Disponible</p>
-          <strong className='positive'>{money.format(total - used)}</strong>
-        </div>
-        <div>
-          <p>Ejecución presupuestal</p>
-          <strong>{Math.round((used / total) * 100)}%</strong>
-        </div>
-      </section>
-      <section className='g-card g-table-card'>
-        <table>
-          <thead>
-            <tr>
-              <th>Capítulo</th>
-              <th>Presupuesto</th>
-              <th>Ejecutado</th>
-              <th>Disponible</th>
-              <th>Avance físico</th>
-              <th>Control</th>
-            </tr>
-          </thead>
-          <tbody>
-            {chapters.map((c) => {
-              const over = c.executed > c.budget;
-              return (
-                <tr key={c.code}>
-                  <td>
-                    <strong>
-                      {c.code}. {c.name}
-                    </strong>
-                  </td>
-                  <td>{money.format(c.budget)}</td>
-                  <td>{money.format(c.executed)}</td>
-                  <td className={over ? 'negative' : ''}>{money.format(c.budget - c.executed)}</td>
-                  <td>{c.progress}%</td>
-                  <td>
-                    {over ? (
-                      <span className='g-status danger'>Sobrecosto</span>
-                    ) : (
-                      <span className='g-status done'>Controlado</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
-    </>
+    <section className='g-card g-table-card'>
+      <table>
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Equipo</th>
+            <th>Ultimo preventivo</th>
+            <th>Frecuencia</th>
+            <th>Proximo M/to</th>
+            <th>Dias faltantes</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {schedule.map((item) => {
+            const last = lastPreventiveDate(item.equipment.code, maintenances);
+            const overdue = item.days !== null && item.days < 0;
+            const dueSoon = item.days !== null && item.days >= 0 && item.days <= 15;
+            return (
+              <tr key={item.equipment.code}>
+                <td>
+                  <strong>{item.equipment.code}</strong>
+                </td>
+                <td>{equipmentName(item.equipment)}</td>
+                <td>{last ? dateLabel(last) : 'Sin preventivo'}</td>
+                <td>{item.equipment.frequencyDays} dias</td>
+                <td>{item.next ? dateLabel(item.next) : 'Sin fecha'}</td>
+                <td>{item.days ?? '-'}</td>
+                <td>
+                  <span className={'g-status ' + (overdue ? 'danger' : dueSoon ? 'plan' : 'done')}>
+                    {overdue ? 'Vencido' : dueSoon ? 'Pendiente' : 'Al dia'}
+                  </span>
+                </td>
+                <td>
+                  <div className='g-row-actions'>
+                    <button
+                      type='button'
+                      aria-label={`Registrar ejecucion del equipo ${item.equipment.code}`}
+                      onClick={() => onRegister(item.equipment.code)}
+                    >
+                      Registrar
+                    </button>
+                    <button
+                      type='button'
+                      aria-label={`Abrir hoja de vida del equipo ${item.equipment.code}`}
+                      onClick={() => onSelect(item.equipment.code)}
+                    >
+                      HV
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </section>
   );
 }
 
-function Movements({ movements }: { movements: Movement[] }) {
+function MaintenanceTable({
+  equipment,
+  maintenances,
+  onEdit,
+  onDelete
+}: {
+  equipment: Equipment[];
+  maintenances: Maintenance[];
+  onEdit: (item: Maintenance) => void;
+  onDelete: (id: string) => void;
+}) {
+  const byCode = new Map(equipment.map((item) => [item.code, item]));
   return (
     <section className='g-card g-table-card'>
       <table>
         <thead>
           <tr>
             <th>Fecha</th>
+            <th>Codigo</th>
+            <th>Equipo</th>
             <th>Tipo</th>
-            <th>Concepto</th>
-            <th>Tercero</th>
+            <th>Descripcion</th>
             <th>Valor</th>
-            <th>Soporte</th>
+            <th>MO + insumos</th>
+            <th>Utilidad</th>
+            <th>Personal</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {movements.map((m) => (
-            <tr key={m.id}>
-              <td>{m.date}</td>
+          {maintenances.map((item) => (
+            <tr key={item.id}>
+              <td>{dateLabel(item.date)}</td>
               <td>
-                <span className={'g-status ' + (m.type === 'Ingreso' ? 'done' : 'plan')}>
-                  {m.type}
+                <strong>{item.code}</strong>
+              </td>
+              <td>{equipmentName(byCode.get(item.code))}</td>
+              <td>
+                <span className={'g-status ' + (item.type === 'PREVENTIVO' ? 'done' : 'plan')}>
+                  {item.type}
                 </span>
               </td>
-              <td>
-                <strong>{m.concept}</strong>
+              <td>{item.description}</td>
+              <td>{money.format(item.value)}</td>
+              <td>{money.format(item.laborCost)}</td>
+              <td className={item.utility >= 0 ? 'positive' : 'negative'}>
+                {money.format(item.utility)}
               </td>
-              <td>{m.provider}</td>
-              <td className={m.type === 'Ingreso' ? 'positive' : ''}>
-                <strong>
-                  {m.type === 'Ingreso' ? '+ ' : '- '}
-                  {money.format(m.amount)}
-                </strong>
-              </td>
+              <td>{item.personnel}</td>
               <td>
-                <button>? Ver</button>
+                <div className='g-row-actions'>
+                  <button
+                    type='button'
+                    aria-label={`Modificar mantenimiento ${item.id}`}
+                    onClick={() => onEdit(item)}
+                  >
+                    Modificar
+                  </button>
+                  <button
+                    type='button'
+                    aria-label={`Eliminar mantenimiento ${item.id}`}
+                    onClick={() => onDelete(item.id)}
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -1013,61 +1201,171 @@ function Movements({ movements }: { movements: Movement[] }) {
   );
 }
 
-function Progress({ project, chapters }: { project: Project; chapters: Chapter[] }) {
+function CalendarView({
+  equipment,
+  maintenances,
+  marks,
+  onRegister
+}: {
+  equipment: Equipment[];
+  maintenances: Maintenance[];
+  marks: CalendarMark[];
+  onRegister: (code: string) => void;
+}) {
+  const weeks = useMemo(() => {
+    const start = parseDate(todayInput());
+    const day = start.getDay() || 7;
+    start.setDate(start.getDate() - day + 1);
+    return Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + index * 7);
+      return toInputDate(date);
+    });
+  }, []);
+
+  return (
+    <section className='g-card g-table-card g-calendar-card'>
+      <table>
+        <thead>
+          <tr>
+            <th>Equipo</th>
+            {weeks.map((week) => (
+              <th key={week}>{dateLabel(week)}</th>
+            ))}
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {equipment.map((item) => (
+            <tr key={item.code}>
+              <td>
+                <strong>{item.code}</strong>
+                <small>{equipmentName(item)}</small>
+              </td>
+              {weeks.map((week) => {
+                const status = weeklyStatus(item, week, marks, maintenances);
+                return (
+                  <td key={week}>
+                    {status ? (
+                      <span className={'g-status g-status-cell ' + statusClass(status)}>
+                        {status}
+                      </span>
+                    ) : (
+                      <span className='g-muted-cell'>-</span>
+                    )}
+                  </td>
+                );
+              })}
+              <td>
+                <button onClick={() => onRegister(item.code)}>Registrar</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
+function weeklyStatus(
+  equipment: Equipment,
+  weekStart: string,
+  marks: CalendarMark[],
+  maintenances: Maintenance[]
+) {
+  const start = parseDate(weekStart);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const explicit = marks.find((mark) => {
+    if (mark.code !== equipment.code) return false;
+    const date = parseDate(mark.date);
+    return date >= start && date <= end;
+  });
+  if (explicit) return explicit.status;
+
+  const next = nextMaintenanceDate(equipment, maintenances);
+  if (!next) return null;
+  const nextDate = parseDate(next);
+  if (nextDate >= start && nextDate <= end) return differenceInDays(next) < 0 ? 'N' : 'P';
+  return null;
+}
+
+function LifeSheet({
+  equipment,
+  maintenances,
+  marks
+}: {
+  equipment: Equipment;
+  maintenances: Maintenance[];
+  marks: CalendarMark[];
+}) {
+  const next = nextMaintenanceDate(equipment, maintenances);
   return (
     <>
-      <section className='g-progress-hero'>
-        <div>
-          <p>AVANCE GENERAL DEL PROYECTO</p>
-          <strong>{project.progress}%</strong>
-          <span>Meta programada: 72%</span>
+      <section className='g-card g-life-sheet'>
+        <div className='g-card-head'>
+          <div>
+            <h3>Formato hoja de vida de equipos</h3>
+            <p>Procedimiento de mantenimiento de instalaciones y equipos</p>
+          </div>
+          <span className='g-status done'>Version 01</span>
         </div>
-        <div
-          className='g-ring'
-          style={{ background: `conic-gradient(#c99a2e ${project.progress}%, #e8edf2 0)` }}
-        >
-          <i>{project.progress}%</i>
+        <div className='g-life-grid'>
+          <Info label='Codigo' value={equipment.code} />
+          <Info label='Equipo' value={equipmentName(equipment)} />
+          <Info label='Fecha apertura' value={dateLabel(equipment.openedAt)} />
+          <Info label='Marca' value={equipment.brand} />
+          <Info label='Capacidad' value={equipment.capacity} />
+          <Info label='Cliente' value={equipment.client} />
+          <Info label='Direccion' value={equipment.address} />
+          <Info label='Ubicacion' value={equipment.location} />
+          <Info label='Telefono' value={equipment.phone} />
+          <Info label='Caracteristicas' value={equipment.features} />
+          <Info label='Frecuencia' value={`${equipment.frequencyDays} dias`} />
+          <Info label='Proximo mantenimiento' value={next ? dateLabel(next) : 'Sin calculo'} />
         </div>
       </section>
       <section className='g-card g-table-card'>
+        <div className='g-card-head'>
+          <div>
+            <h3>Historial</h3>
+            <p>Preventivos, correctivos y estados del calendario</p>
+          </div>
+        </div>
         <table>
           <thead>
             <tr>
-              <th>Actividad / capítulo</th>
-              <th>Avance</th>
-              <th>Estado</th>
-              <th>Última actualización</th>
+              <th>Fecha</th>
+              <th>P</th>
+              <th>C</th>
+              <th>Descripcion</th>
+              <th>Personal</th>
+              <th>Valor</th>
             </tr>
           </thead>
           <tbody>
-            {chapters.map((c) => (
-              <tr key={c.code}>
-                <td>
-                  <strong>{c.name}</strong>
-                </td>
-                <td>
-                  <div className='g-cell-progress'>
-                    <div
-                      className='track'
-                      role='progressbar'
-                      aria-label='Avance de la actividad'
-                      aria-valuenow={c.progress}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                    >
-                      <b style={{ width: c.progress + '%' }} />
-                    </div>
-                    <span>{c.progress}%</span>
-                  </div>
-                </td>
-                <td>
-                  <span className='g-status done'>
-                    {c.progress === 100 ? 'Completado' : 'En curso'}
-                  </span>
-                </td>
-                <td>02 ago 2026</td>
+            {maintenances.map((item) => (
+              <tr key={item.id}>
+                <td>{dateLabel(item.date)}</td>
+                <td>{item.type === 'PREVENTIVO' ? 'X' : ''}</td>
+                <td>{item.type === 'CORRECTIVO' ? 'X' : ''}</td>
+                <td>{item.description}</td>
+                <td>{item.personnel}</td>
+                <td>{money.format(item.value)}</td>
               </tr>
             ))}
+            {marks
+              .filter((mark) => mark.status !== 'E')
+              .map((mark) => (
+                <tr key={mark.id}>
+                  <td>{dateLabel(mark.date)}</td>
+                  <td>{mark.status}</td>
+                  <td aria-label='Sin correctivo'>-</td>
+                  <td>{mark.note || statusLabels[mark.status]}</td>
+                  <td aria-label='Sin personal'>-</td>
+                  <td aria-label='Sin valor'>-</td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </section>
@@ -1075,33 +1373,296 @@ function Progress({ project, chapters }: { project: Project; chapters: Chapter[]
   );
 }
 
-function Documents({ onUpload }: { onUpload: () => void }) {
-  const docs = [
-    ['ACTA-001.pdf', 'Acta de obra', '02 ago 2026', '2,4 MB'],
-    ['Factura_ElectroCosta.pdf', 'Factura', '29 jul 2026', '840 KB'],
-    ['Avance_semana_12.zip', 'Registro fotográfico', '28 jul 2026', '14,2 MB'],
-    ['Contrato_Los_Corales.pdf', 'Contrato', '02 jul 2026', '5,1 MB']
-  ];
+function PersonnelView({ personnel, onNew }: { personnel: string[]; onNew: () => void }) {
   return (
-    <section className='g-doc-grid'>
-      <button className='g-upload' onClick={onUpload}>
-        <span>?</span>
-        <strong>Subir nuevo soporte</strong>
-        <small>PDF, imágenes, Excel o ZIP · máx. 20 MB</small>
-      </button>
-      {docs.map((d) => (
-        <article className='g-card g-doc' key={d[0]}>
-          <span>?</span>
-          <div>
-            <strong>{d[0]}</strong>
-            <p>
-              {d[1]} · {d[2]}
-            </p>
-            <small>{d[3]}</small>
-          </div>
-          <button>•••</button>
-        </article>
-      ))}
+    <section className='g-card'>
+      <div className='g-card-head'>
+        <div>
+          <h3>Personal autorizado</h3>
+          <p>Lista que alimenta el registro de mantenimiento</p>
+        </div>
+        <button onClick={onNew}>Nuevo</button>
+      </div>
+      <div className='g-chip-list'>
+        {personnel.length ? (
+          personnel.map((name) => <span key={name}>{name}</span>)
+        ) : (
+          <p>No hay personal cargado.</p>
+        )}
+      </div>
     </section>
   );
+}
+
+function Info({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <p>{label}</p>
+      <strong>{value || '-'}</strong>
+    </div>
+  );
+}
+
+function Panel({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <p className='eyebrow'>GIBBOR MACRO WEB</p>
+      <h2>{title}</h2>
+      {children}
+    </div>
+  );
+}
+
+function EquipmentForm({
+  equipment,
+  frequencies,
+  personnel,
+  onSubmit
+}: {
+  equipment: Equipment | null;
+  frequencies: Frequency[];
+  personnel: string[];
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <Panel title={equipment ? 'Modificar equipo' : 'Cargar equipo'}>
+      <form onSubmit={onSubmit}>
+        <div className='g-fields'>
+          <label>
+            Codigo
+            <input name='code' defaultValue={equipment?.code || ''} required />
+          </label>
+          <label>
+            Equipo / actividad
+            <input name='name' defaultValue={equipment?.name || ''} required />
+          </label>
+        </div>
+        <div className='g-fields'>
+          <label>
+            Marca
+            <input name='brand' defaultValue={equipment?.brand || ''} />
+          </label>
+          <label>
+            Cliente
+            <input name='client' defaultValue={equipment?.client || ''} />
+          </label>
+        </div>
+        <label>
+          Caracteristicas del equipo intervenido
+          <textarea name='features' rows={3} defaultValue={equipment?.features || ''} />
+        </label>
+        <div className='g-fields'>
+          <label>
+            Modelo
+            <input name='model' defaultValue={equipment?.model || ''} />
+          </label>
+          <label>
+            Ubicacion
+            <input name='location' defaultValue={equipment?.location || ''} />
+          </label>
+        </div>
+        <div className='g-fields'>
+          <label>
+            Capacidad
+            <input name='capacity' defaultValue={equipment?.capacity || ''} />
+          </label>
+          <label>
+            Telefono
+            <input name='phone' defaultValue={equipment?.phone || ''} />
+          </label>
+        </div>
+        <label>
+          Direccion
+          <input name='address' defaultValue={equipment?.address || ''} />
+        </label>
+        <div className='g-fields'>
+          <label>
+            Fecha apertura
+            <input name='openedAt' type='date' defaultValue={equipment?.openedAt || todayInput()} />
+          </label>
+          <label>
+            Frecuencia
+            <select name='frequencyDays' defaultValue={equipment?.frequencyDays || 120}>
+              {frequencies.map((frequency) => (
+                <option value={frequency.days} key={frequency.days}>
+                  {frequency.days} dias · {frequency.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <label>
+          Quien realiza
+          <input
+            name='responsible'
+            list='personnel-list'
+            defaultValue={equipment?.responsible || ''}
+          />
+        </label>
+        <datalist id='personnel-list'>
+          {personnel.map((name) => (
+            <option value={name} key={name}>
+              {name}
+            </option>
+          ))}
+        </datalist>
+        <div className='g-form-actions'>
+          <button className='g-primary'>Guardar equipo</button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+function MaintenanceForm({
+  entry,
+  selectedCode,
+  equipment,
+  personnel,
+  onSubmit
+}: {
+  entry: Maintenance | null;
+  selectedCode: string;
+  equipment: Equipment[];
+  personnel: string[];
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <Panel title={entry ? 'Modificar registro' : 'Nuevo registro de mantenimiento'}>
+      <form onSubmit={onSubmit}>
+        <div className='g-fields'>
+          <label>
+            Fecha
+            <input name='date' type='date' defaultValue={entry?.date || todayInput()} required />
+          </label>
+          <label>
+            Codigo
+            <select name='code' defaultValue={entry?.code || selectedCode} required>
+              {equipment.map((item) => (
+                <option value={item.code} key={item.code}>
+                  {item.code} · {equipmentName(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className='g-fields'>
+          <label>
+            Tipo de M/to
+            <select name='type' defaultValue={entry?.type || 'PREVENTIVO'}>
+              <option value='PREVENTIVO'>PREVENTIVO</option>
+              <option value='CORRECTIVO'>CORRECTIVO</option>
+            </select>
+          </label>
+          <label>
+            Personal
+            <input name='personnel' list='personnel-list' defaultValue={entry?.personnel || ''} />
+          </label>
+        </div>
+        <label>
+          Descripcion M/to
+          <textarea name='description' rows={4} defaultValue={entry?.description || ''} required />
+        </label>
+        <div className='g-fields'>
+          <label>
+            Valor M/to
+            <input name='value' type='number' defaultValue={entry?.value || 0} />
+          </label>
+          <label>
+            MO + insumos
+            <input name='laborCost' type='number' defaultValue={entry?.laborCost || 0} />
+          </label>
+        </div>
+        <datalist id='personnel-list'>
+          {personnel.map((name) => (
+            <option value={name} key={name}>
+              {name}
+            </option>
+          ))}
+        </datalist>
+        <div className='g-form-actions'>
+          <button className='g-primary'>Guardar registro</button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+function StatusForm({
+  selectedCode,
+  equipment,
+  personnel,
+  onSubmit
+}: {
+  selectedCode: string;
+  equipment: Equipment[];
+  personnel: string[];
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  return (
+    <Panel title='Registrar ejecucion / estado'>
+      <form onSubmit={onSubmit}>
+        <div className='g-fields'>
+          <label>
+            Codigo
+            <select name='code' defaultValue={selectedCode} required>
+              {equipment.map((item) => (
+                <option value={item.code} key={item.code}>
+                  {item.code} · {equipmentName(item)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Fecha
+            <input name='date' type='date' defaultValue={todayInput()} required />
+          </label>
+        </div>
+        <label>
+          Estado
+          <select name='status' defaultValue='E'>
+            <option value='E'>E · Ejecutado</option>
+            <option value='R'>R · Reprogramado</option>
+            <option value='N'>N · No ejecutado</option>
+            <option value='P'>P · Pendiente</option>
+          </select>
+        </label>
+        <label>
+          Observacion
+          <textarea name='note' rows={3} />
+        </label>
+        <div className='g-fields'>
+          <label>
+            Valor M/to si fue ejecutado
+            <input name='value' type='number' defaultValue={0} />
+          </label>
+          <label>
+            MO + insumos
+            <input name='laborCost' type='number' defaultValue={0} />
+          </label>
+        </div>
+        <label>
+          Personal
+          <input name='personnel' list='personnel-list' />
+        </label>
+        <datalist id='personnel-list'>
+          {personnel.map((name) => (
+            <option value={name} key={name}>
+              {name}
+            </option>
+          ))}
+        </datalist>
+        <div className='g-form-actions'>
+          <button className='g-primary'>Registrar</button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
+function statusClass(status: StatusCode) {
+  if (status === 'E') return 'done';
+  if (status === 'R') return 'plan';
+  if (status === 'N') return 'danger';
+  return 'pending';
 }
