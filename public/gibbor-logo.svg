@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 96" role="img" aria-labelledby="title desc">
+  <title id="title">GIBBOR Mantenimiento</title>
+  <desc id="desc">Logo corporativo de GIBBOR Mantenimiento</desc>
+  <g fill="none" fill-rule="evenodd">
+    <path d="M20 12h72l-8 72H12l8-72Z" stroke="#c99a2e" stroke-width="4" />
+    <text x="34" y="66" fill="#c99a2e" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="700">G</text>
+    <text x="116" y="43" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="800" letter-spacing="8">GIBBOR</text>
+    <text x="118" y="73" fill="#d7e4ec" font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="500" letter-spacing="3">MANTENIMIENTO</text>
+  </g>
+</svg>

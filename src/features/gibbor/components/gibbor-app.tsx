@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 
 type View =
@@ -214,6 +215,7 @@ function mergeImportedState(
 
 export function GibborApp() {
   const [ready, setReady] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false);
   const [view, setView] = useState<View>('Resumen');
   const [state, setState] = useState<MaintenanceState>(emptyState);
   const [selectedCode, setSelectedCode] = useState('');
@@ -488,16 +490,29 @@ export function GibborApp() {
   }
 
   if (!ready) return null;
+  if (!hasAccess) {
+    return (
+      <EntryAccess
+        onEnter={() => setHasAccess(true)}
+        onImport={() => {
+          setHasAccess(true);
+          setModal('import');
+        }}
+      />
+    );
+  }
 
   return (
     <div className='g-shell'>
       <aside className='g-sidebar'>
         <div className='g-brand'>
-          <span>G</span>
-          <div>
-            <strong>GIBBOR</strong>
-            <small>MANTENIMIENTO</small>
-          </div>
+          <Image
+            src='/gibbor-logo.svg'
+            alt='GIBBOR Mantenimiento'
+            width={205}
+            height={55}
+            priority
+          />
         </div>
         <nav>
           <p>MACRO WEB</p>
@@ -523,6 +538,9 @@ export function GibborApp() {
               <small>Gerente · {state.organization.city}</small>
             </p>
           </div>
+          <button type='button' onClick={() => setHasAccess(false)}>
+            Salir
+          </button>
         </div>
       </aside>
       <main className='g-main'>
@@ -752,6 +770,74 @@ export function GibborApp() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function EntryAccess({ onEnter, onImport }: { onEnter: () => void; onImport: () => void }) {
+  function submitAccess(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onEnter();
+  }
+
+  return (
+    <div className='g-login'>
+      <section className='g-login-art'>
+        <div className='g-login-brand'>
+          <Image
+            src='/gibbor-logo.svg'
+            alt='GIBBOR Mantenimiento'
+            width={230}
+            height={61}
+            priority
+          />
+        </div>
+        <div className='g-login-copy'>
+          <p>ACCESO OPERATIVO</p>
+          <h1>Control de mantenimiento con trazabilidad completa.</h1>
+          <p className='muted'>
+            Equipos, programacion, estados E/R/N/P, registros, hoja de vida y exportacion desde un
+            panel unico para la operacion.
+          </p>
+          <div className='g-login-highlights'>
+            <span>Macro web</span>
+            <span>Supabase listo</span>
+            <span>Cartagena</span>
+          </div>
+        </div>
+        <p className='g-login-foot'>GIBBOR Soluciones S.A.S. · Plataforma privada</p>
+      </section>
+      <section className='g-login-form'>
+        <div className='g-mobile-brand'>
+          <Image
+            src='/gibbor-logo.svg'
+            alt='GIBBOR Mantenimiento'
+            width={230}
+            height={61}
+            priority
+          />
+        </div>
+        <form onSubmit={submitAccess}>
+          <p className='eyebrow'>MACRO WEB</p>
+          <h2>Acceso de entrada</h2>
+          <p className='muted'>Ingresa al panel de control operativo de GIBBOR.</p>
+          <label>
+            Usuario
+            <input name='user' autoComplete='username' placeholder='usuario@gibbor.com' />
+          </label>
+          <label>
+            Clave
+            <input name='password' type='password' autoComplete='current-password' />
+          </label>
+          <button className='g-primary'>
+            Entrar al sistema
+            <span>Acceder</span>
+          </button>
+          <button className='g-secondary g-entry-import' type='button' onClick={onImport}>
+            Entrar e importar macro
+          </button>
+        </form>
+      </section>
     </div>
   );
 }
