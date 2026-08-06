@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3000",
     "cleanup": "node scripts/cleanup.js",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix && bun format",
