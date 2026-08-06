@@ -30,6 +30,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@sentry/nextjs": "^10.45.0",
+    "@supabase/supabase-js": "^2.0.0",
     "@tabler/icons-react": "^3.40.0",
     "@tailwindcss/postcss": "^4.2.2",
     "@tanstack/react-form": "^1.28.5",
@@ -96,5 +97,3 @@
     ]
   }
 }
-
-
