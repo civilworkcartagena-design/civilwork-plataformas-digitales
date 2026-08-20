@@ -1,0 +1,8 @@
+create table if not exists leads (id uuid primary key default gen_random_uuid(), created_at timestamptz default now(), company text not null, contact_name text not null, position text, email text not null, phone text, industry text, company_size text, answers jsonb not null default '{}', digital_score int, recommended_plan text, estimated_investment_min bigint, estimated_investment_max bigint, status text default 'Nuevo', attribution jsonb default '{}');
+alter table leads add column if not exists answers jsonb not null default '{}';
+alter table leads enable row level security;
+create table diagnostic_sessions (id uuid primary key default gen_random_uuid(), lead_id uuid references leads(id), created_at timestamptz default now(), completed_at timestamptz, current_question_id text, attribution jsonb default '{}');
+create table diagnostic_answers (id bigint generated always as identity primary key, session_id uuid references diagnostic_sessions(id), question_id text not null, answer jsonb not null, created_at timestamptz default now());
+create table quotes (id uuid primary key default gen_random_uuid(), lead_id uuid references leads(id), created_at timestamptz default now(), setup_total bigint, monthly_total bigint, investment_min bigint, investment_max bigint, complexity text, plan text);
+create table quote_items (id bigint generated always as identity primary key, quote_id uuid references quotes(id), service_id text, label text, setup bigint, monthly bigint default 0);
+create table activity_log (id bigint generated always as identity primary key, lead_id uuid references leads(id), created_at timestamptz default now(), type text, description text, metadata jsonb default '{}');
