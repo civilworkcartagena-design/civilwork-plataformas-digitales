@@ -1,0 +1,330 @@
+{
+  "proyecto": "Los Corales",
+  "cliente": "INVERSIONES DALDOAL S.A.S.",
+  "descripcion": "Adecuación integral de dos viviendas independientes. Semana 1: liberación de frentes, demoliciones e inicio de redes y mampostería.",
+  "ubicacion": "Sector Bahía · Cartagena de Indias",
+  "estado": "en_ejecucion",
+  "fecha_informe": "2026-09-13",
+  "ultima_actualizacion": "13 de septiembre de 2026",
+  "avance_general": 8,
+  "archivo_fuente": "Informe semanal 01 · CW029-26 · REV1",
+  "fotos": [
+    {
+      "url": "assets/images/los-corales/semana-01-01.jpg",
+      "descripcion": "Demolición de muro y liberación de vano en primer piso.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-02.jpg",
+      "descripcion": "Zona húmeda P1: retiro de enchape y exposición de redes.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-03.jpg",
+      "descripcion": "Superficie de primer piso con acabado retirado y frente liberado.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-04.jpg",
+      "descripcion": "Demolición de piso y acopio temporal de material antes de evacuación.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-05.jpg",
+      "descripcion": "Apertura de regata y conductores expuestos tras desconexión eléctrica.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-06.jpg",
+      "descripcion": "Ingreso de cemento para el arranque de obra gris y mampostería.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-07.jpg",
+      "descripcion": "Salida de material y operación logística en el frente exterior.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    },
+    {
+      "url": "assets/images/los-corales/semana-01-08.jpg",
+      "descripcion": "Apoyo de transporte y retiro de material sobrante/RCD.",
+      "fecha": "Cierre / inspección de Semana 1 · informe 13-Sep-2026"
+    }
+  ],
+  "observaciones": "Último avance global formalmente verificado: 8% al 10-Sep-2026. El 12% es una meta operativa. Los porcentajes por actividad no se promedian: un nuevo avance contractual requiere ponderación por cantidades y valores. Primer retiro de RCD confirmado: 4 m³.",
+  "recomendaciones": "Formalizar primero fachada; luego clósets y puertas, y terraza. Confirmar alcance comercial vigente de los adicionales y programar su ejecución después de formalizarlos. Mantener validaciones técnicas y pruebas de redes.",
+  "siguiente_actividad": "Formalizar fachada, restauración de clósets y puertas, y terraza; coordinar los frentes de Semana 2.",
+  "riesgos": "Muros reportados como estructurales: mantener respaldo de revisión y validación. Escalera y fachada P2 en ruta crítica; redes requieren prueba antes del cierre.",
+  "fases": [
+    {
+      "nombre": "Retiro de enchape · P1",
+      "porcentaje": 100,
+      "estado": "completado",
+      "actividades": []
+    },
+    {
+      "nombre": "Demolición de muros · P1",
+      "porcentaje": 100,
+      "estado": "completado",
+      "actividades": []
+    },
+    {
+      "nombre": "Demoliciones generales · P1",
+      "porcentaje": 90,
+      "estado": "en_proceso",
+      "actividades": []
+    },
+    {
+      "nombre": "Desmonte de clósets y puertas · P1",
+      "porcentaje": 100,
+      "estado": "completado",
+      "actividades": []
+    },
+    {
+      "nombre": "Intervención de baño · P1",
+      "porcentaje": 30,
+      "estado": "en_proceso",
+      "actividades": []
+    },
+    {
+      "nombre": "Retiro de pisos · P2",
+      "porcentaje": 10,
+      "estado": "en_proceso",
+      "actividades": []
+    },
+    {
+      "nombre": "Desconexión eléctrica",
+      "porcentaje": 100,
+      "estado": "completado",
+      "actividades": []
+    },
+    {
+      "nombre": "Nuevas acometidas hidráulicas",
+      "porcentaje": 10,
+      "estado": "en_proceso",
+      "actividades": []
+    },
+    {
+      "nombre": "Mampostería nueva · P1",
+      "porcentaje": 10,
+      "estado": "en_proceso",
+      "actividades": []
+    }
+  ],
+  "actividades": [
+    {
+      "actividad": "Retiro de enchape · P1",
+      "porcentaje": 100,
+      "estado": "completado",
+      "frente": "Demoliciones y retiros",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Demolición de muros · P1",
+      "porcentaje": 100,
+      "estado": "completado",
+      "frente": "Demoliciones y retiros",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Demoliciones generales · P1",
+      "porcentaje": 90,
+      "estado": "en_proceso",
+      "frente": "Demoliciones y retiros",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Desmonte de clósets y puertas · P1",
+      "porcentaje": 100,
+      "estado": "completado",
+      "frente": "Demoliciones y retiros",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Intervención de baño · P1",
+      "porcentaje": 30,
+      "estado": "en_proceso",
+      "frente": "Redes y baños",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Retiro de pisos · P2",
+      "porcentaje": 10,
+      "estado": "en_proceso",
+      "frente": "Demoliciones y retiros",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Desconexión eléctrica",
+      "porcentaje": 100,
+      "estado": "completado",
+      "frente": "Instalación eléctrica",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Nuevas acometidas hidráulicas",
+      "porcentaje": 10,
+      "estado": "en_proceso",
+      "frente": "Redes y baños",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Mampostería nueva · P1",
+      "porcentaje": 10,
+      "estado": "en_proceso",
+      "frente": "Mampostería y resanes",
+      "seguimiento": "Avance reportado en Semana 1"
+    },
+    {
+      "actividad": "Demolición de escalera y muros del segundo piso",
+      "frente": "Demoliciones y retiros",
+      "estado": "pendiente",
+      "seguimiento": "Prioridad de Semana 2; requiere validación técnica"
+    },
+    {
+      "actividad": "Continuar retiro de piso P2 desde el 10% reportado",
+      "frente": "Demoliciones y retiros",
+      "estado": "pendiente",
+      "seguimiento": "Semana 2"
+    },
+    {
+      "actividad": "Consolidar retiro de RCD y soportes de disposición",
+      "frente": "Demoliciones y retiros",
+      "estado": "pendiente",
+      "seguimiento": "Primer retiro confirmado: 4 m³"
+    },
+    {
+      "actividad": "Formalizar oferta de retranqueo de fachada P2",
+      "frente": "Fachada y escalera",
+      "estado": "pendiente",
+      "seguimiento": "Prioridad 1 · pendiente de formalización del cliente"
+    },
+    {
+      "actividad": "Ejecutar retranqueo, nuevo paramento y ajuste de vano frontal",
+      "frente": "Fachada y escalera",
+      "estado": "pendiente",
+      "seguimiento": "Condicionado a formalización y validación técnica"
+    },
+    {
+      "actividad": "Cierre del hueco de escalera, escalera exterior y baranda",
+      "frente": "Fachada y escalera",
+      "estado": "pendiente",
+      "seguimiento": "Programación y coordinación pendientes"
+    },
+    {
+      "actividad": "Continuar levantes P1 desde el 10% reportado",
+      "frente": "Mampostería y resanes",
+      "estado": "pendiente",
+      "seguimiento": "Semana 2 · control de ejes, vanos, plomo y niveles"
+    },
+    {
+      "actividad": "Pañetes, resanes, dinteles y remates",
+      "frente": "Mampostería y resanes",
+      "estado": "pendiente",
+      "seguimiento": "Posterior a redes y levantes"
+    },
+    {
+      "actividad": "Continuar acometidas hidráulicas desde el 10% reportado",
+      "frente": "Redes y baños",
+      "estado": "pendiente",
+      "seguimiento": "Semana 2 · medir y probar antes de tapar"
+    },
+    {
+      "actividad": "Instalar puntos sanitarios, aparatos y griferías",
+      "frente": "Redes y baños",
+      "estado": "pendiente",
+      "seguimiento": "Etapa futura"
+    },
+    {
+      "actividad": "Ejecutar iluminación, tomacorrientes, tableros y puesta a tierra",
+      "frente": "Instalación eléctrica",
+      "estado": "pendiente",
+      "seguimiento": "Instalación básica incluida en el contrato"
+    },
+    {
+      "actividad": "Formalizar adicional de independización eléctrica, diseño y trámite RETIE",
+      "frente": "Instalación eléctrica",
+      "estado": "pendiente",
+      "seguimiento": "Pendiente del cliente · alcance regulatorio adicional"
+    },
+    {
+      "actividad": "Instalar pisos interiores, enchapes y guardaescobas",
+      "frente": "Pisos y acabados",
+      "estado": "pendiente",
+      "seguimiento": "Etapa futura"
+    },
+    {
+      "actividad": "Formalizar restauración de 7 puertas y 3 clósets existentes",
+      "frente": "Carpintería existente",
+      "estado": "pendiente",
+      "seguimiento": "Prioridad 2 · pendiente de formalización del cliente"
+    },
+    {
+      "actividad": "Restaurar puertas y clósets: lijado, resanes, fondos y acabado satinado",
+      "frente": "Carpintería existente",
+      "estado": "pendiente",
+      "seguimiento": "Condicionado a formalización; no es fabricación nueva"
+    },
+    {
+      "actividad": "Formalizar alcance de terraza y reparación de reja existente",
+      "frente": "Terraza y reja",
+      "estado": "pendiente",
+      "seguimiento": "Prioridad 3 · confirmar alcance y versión comercial"
+    },
+    {
+      "actividad": "Retirar piso de terraza, nivelar e instalar piso exterior",
+      "frente": "Terraza y reja",
+      "estado": "pendiente",
+      "seguimiento": "Condicionado a formalización y medición conjunta"
+    },
+    {
+      "actividad": "Reparar, pintar y ajustar la reja existente",
+      "frente": "Terraza y reja",
+      "estado": "pendiente",
+      "seguimiento": "Condicionado a formalización"
+    },
+    {
+      "actividad": "Instalar módulos, mesones, lavaplatos y remates de cocina",
+      "frente": "Cocinas",
+      "estado": "pendiente",
+      "seguimiento": "Etapa futura según alcance contratado"
+    },
+    {
+      "actividad": "Pintura interior y exterior e impermeabilización",
+      "frente": "Pisos y acabados",
+      "estado": "pendiente",
+      "seguimiento": "Etapa futura"
+    },
+    {
+      "actividad": "Pruebas finales, limpieza, correcciones y acta de entrega",
+      "frente": "Pruebas y entrega",
+      "estado": "pendiente",
+      "seguimiento": "Cierre de obra"
+    }
+  ],
+  "formalizaciones": [
+    {
+      "prioridad": "01",
+      "nombre": "Retranqueo de fachada",
+      "estado": "Pendiente de formalización del cliente",
+      "detalle": "Prioridad principal. Definir y formalizar protección, demolición controlada, nuevo paramento, resanes y ajuste del vano frontal antes de programar la intervención."
+    },
+    {
+      "prioridad": "02",
+      "nombre": "Clósets y puertas existentes",
+      "estado": "Pendiente de formalización del cliente",
+      "detalle": "Restauración de 7 puertas y 3 clósets (2 medianos y 1 grande), con fondos en triplex donde corresponda y acabado satinado. No contempla fabricación nueva."
+    },
+    {
+      "prioridad": "03",
+      "nombre": "Terraza y reja",
+      "estado": "Pendiente de formalización del cliente",
+      "detalle": "Acordar alcance de piso exterior y reparación de la reja existente. Las versiones recibidas difieren en cantidad y presupuesto de terraza; confirmar medición y oferta comercial vigente."
+    },
+    {
+      "prioridad": "04",
+      "nombre": "Adicional eléctrico y RETIE",
+      "estado": "Pendiente de formalización del cliente",
+      "detalle": "Independización eléctrica, diseño y certificación/trámite RETIE. La instalación eléctrica básica continúa incluida en el contrato; esta decisión corresponde al alcance regulatorio adicional."
+    }
+  ]
+}

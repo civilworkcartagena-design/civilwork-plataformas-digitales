@@ -1,0 +1,396 @@
+/* Civil Work editorial: architectural photography and restrained motion. */
+.editorial-page {
+  --cw-black: #10232b;
+  --cw-white: #f6f5f1;
+  --cw-red: #ef604c;
+  --cw-steel: #b3c4c8;
+  --cw-fog: #d5dedd;
+  background: #10232b;
+  font-family: 'Century Gothic', 'Avenir Next', Arial, sans-serif;
+}
+.editorial-page .control-header {
+  height: 112px;
+  padding: 0 5vw;
+  background: rgba(12, 28, 35, 0.92);
+  border-bottom: 1px solid #ffffff24;
+}
+.editorial-page .control-header.is-compact {
+  height: 88px;
+}
+.editorial-page .brand-plate {
+  width: 210px;
+  height: 100px;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+.editorial-page .brand-plate img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.editorial-page .control-header.is-compact .brand-plate {
+  height: 78px;
+}
+.editorial-page .header-signal {
+  font-weight: 500;
+  letter-spacing: 0.22em;
+}
+.editorial-page .project-nav a {
+  font-size: 12px;
+  font-weight: 500;
+}
+.editorial-page .project-hero {
+  min-height: 94svh;
+  padding: 190px 6vw 88px;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  align-items: end;
+  gap: 7vw;
+  isolation: isolate;
+}
+.editorial-hero-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+  z-index: -3;
+}
+.editorial-hero-shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(7, 23, 31, 0.87), rgba(7, 23, 31, 0.32)),
+    linear-gradient(0deg, rgba(7, 23, 31, 0.85), transparent 80%);
+  z-index: -2;
+}
+.editorial-page .project-hero h1 {
+  font-size: clamp(64px, 9vw, 150px);
+  font-weight: 400;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+  max-width: 900px;
+}
+.editorial-page .hero-description {
+  max-width: 570px;
+  font-size: 17px;
+  line-height: 1.75;
+}
+.editorial-page .hero-client {
+  color: #fff;
+  font-weight: 500;
+}
+.editorial-page .hero-index {
+  color: #d5dedd;
+  letter-spacing: 0.23em;
+}
+.editorial-page .status-chip {
+  border: 1px solid #ffffff50;
+  background: transparent;
+  color: white;
+}
+.editorial-page .hero-telemetry {
+  border: 0;
+  border-left: 1px solid #ffffff55;
+  padding: 10px 0 10px 28px;
+  background: transparent;
+  backdrop-filter: none;
+}
+.editorial-page .telemetry-primary {
+  display: block;
+}
+.editorial-page .telemetry-primary strong {
+  display: block;
+  font-size: 108px;
+  font-weight: 400;
+  margin-top: 25px;
+}
+.editorial-page .telemetry-primary > span {
+  color: #eee;
+  line-height: 1.6;
+}
+.editorial-page .hero-telemetry dl > div {
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+.editorial-page .report-reference {
+  color: #d5dedd;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  margin-top: 22px;
+}
+.editorial-page .action-link--solid {
+  background: #f4f1e9;
+  color: #10232b;
+  border-color: #f4f1e9;
+  border-radius: 0;
+}
+.editorial-page .action-link--solid:hover {
+  background: #ef604c;
+  color: #fff;
+}
+.editorial-page .hero-scroll {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+}
+.editorial-page .section-light,
+.editorial-page .section-paper {
+  background: #f4f3ef;
+  color: #18333e;
+}
+.editorial-page .section-dark {
+  background: #16313b;
+}
+.editorial-page .section-head h2 {
+  font-size: clamp(36px, 5vw, 76px);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+.editorial-page .section-head {
+  gap: 40px;
+  margin-bottom: 60px;
+}
+.editorial-page .section-head > p {
+  line-height: 1.8;
+  font-weight: 400;
+  max-width: 440px;
+}
+.editorial-page .section-kicker {
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+.editorial-page .metric-block strong {
+  font-weight: 400;
+}
+.editorial-page .metric-block > span {
+  line-height: 1.7;
+}
+.editorial-page .journal-track {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px 32px;
+  overflow: visible;
+}
+.editorial-page .journal-photo {
+  width: auto;
+  min-width: 0;
+  margin: 0;
+}
+.editorial-page .journal-photo button {
+  width: 100%;
+  height: clamp(260px, 38vw, 520px);
+  aspect-ratio: auto;
+  overflow: hidden;
+  border-radius: 0;
+}
+.editorial-page .journal-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.65s ease;
+}
+.editorial-page .journal-photo button:hover img {
+  transform: scale(1.025);
+}
+.editorial-page .journal-photo figcaption {
+  line-height: 1.6;
+}
+.editorial-page .journal-photo figcaption small {
+  margin-top: 7px;
+}
+.editorial-page .custom-cursor,
+.editorial-page .site-noise,
+.editorial-page .page-loader {
+  display: none !important;
+}
+.editorial-page,
+.editorial-page a,
+.editorial-page button {
+  cursor: auto;
+}
+.editorial-page a,
+.editorial-page button {
+  cursor: pointer;
+}
+.editorial-page [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+.editorial-page .control-footer {
+  background: #0c1c23;
+}
+.editorial-page .footer-brand .brand-plate {
+  width: 240px;
+  height: 120px;
+}
+.editorial-page a:focus-visible,
+.editorial-page button:focus-visible,
+.editorial-page summary:focus-visible {
+  outline: 3px solid #ed715f;
+  outline-offset: 5px;
+}
+.editorial-page .hub-hero {
+  padding-top: 190px;
+  background: radial-gradient(ellipse at 85% 20%, #365b69 0%, #10232b 65%);
+}
+.editorial-page .hub-hero h1 {
+  font-weight: 400;
+  letter-spacing: -0.05em;
+}
+.editorial-page .hub-hero h1 em {
+  color: #c9d8d9;
+}
+@media (max-width: 900px) {
+  .editorial-page .header-signal {
+    display: none;
+  }
+  .editorial-page .control-header {
+    grid-template-columns: 1fr auto;
+  }
+  .editorial-page .project-hero {
+    grid-template-columns: 1fr;
+    padding-top: 165px;
+  }
+  .editorial-page .hero-telemetry {
+    max-width: 500px;
+    border-left: 0;
+    border-top: 1px solid #ffffff55;
+    padding: 24px 0 0;
+  }
+  .editorial-page .telemetry-primary {
+    display: flex;
+    align-items: center;
+  }
+  .editorial-page .telemetry-primary strong {
+    font-size: 76px;
+    margin: 0;
+  }
+  .editorial-page .hero-telemetry dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  .editorial-page .hero-telemetry dl > div:last-child {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .editorial-page .control-header {
+    height: 92px;
+    padding: 0 20px;
+  }
+  .editorial-page .brand-plate {
+    width: 158px;
+    height: 78px;
+  }
+  .editorial-page .project-nav {
+    gap: 12px;
+  }
+  .editorial-page .project-nav a {
+    font-size: 11px;
+  }
+  .editorial-page .project-nav a:not(.nav-hub) {
+    display: none;
+  }
+  .editorial-page .project-hero {
+    padding: 145px 24px 65px;
+    gap: 32px;
+  }
+  .editorial-page .project-hero h1 {
+    font-size: 64px;
+  }
+  .editorial-page .hero-description {
+    font-size: 15px;
+  }
+  .editorial-page .hero-actions {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .editorial-page .journal-track {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  .editorial-page .journal-photo button {
+    height: 360px;
+  }
+  .editorial-page .section-head {
+    margin-bottom: 32px;
+    gap: 20px;
+  }
+  .editorial-page .hub-hero {
+    padding-top: 155px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .editorial-page * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.activity-followup {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #586c73;
+}
+.approval-intro {
+  max-width: 760px;
+  margin-bottom: 32px;
+}
+.approval-intro h3 {
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 400;
+  margin: 15px 0;
+}
+.approval-intro p {
+  line-height: 1.8;
+  color: #d5dedd;
+}
+.approval-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 0 0 52px;
+}
+.approval-card {
+  display: flex;
+  gap: 22px;
+  padding: 28px;
+  border: 1px solid #ffffff30;
+  background: #ffffff04;
+}
+.approval-number {
+  color: #ef806d;
+  font-size: 36px;
+  font-weight: 400;
+}
+.approval-state {
+  color: #efac94;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.approval-card h3 {
+  font-size: 24px;
+  font-weight: 400;
+  margin: 15px 0;
+}
+.approval-card p {
+  color: #d5dedd;
+  line-height: 1.8;
+  font-size: 14px;
+}
+@media (max-width: 750px) {
+  .approval-grid {
+    grid-template-columns: 1fr;
+  }
+  .approval-card {
+    padding: 22px;
+    gap: 15px;
+  }
+}
