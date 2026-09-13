@@ -1,0 +1,2 @@
+/* Compatibilidad con instalaciones anteriores. Los estilos activos viven en assets/css/. */
+@import url("assets/css/civilwork-dashboard.css?v=2");
