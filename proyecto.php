@@ -16,8 +16,11 @@ $weeklyReportActive = false;
 if ($slug === 'los_corales') {
     $reportPath = __DIR__ . '/reports/los-corales-semana-01.json';
     $weekly = is_file($reportPath) ? json_decode((string) file_get_contents($reportPath), true) : null;
-    $apiDate = strtotime((string) ($project['fecha_informe'] ?? ''));
-    if (is_array($weekly) && (!$apiDate || $apiDate <= strtotime($weekly['fecha_informe']))) {
+    $apiDate = civilwork_report_timestamp(
+        $project['fecha_informe'] ?? $project['ultimo_informe'] ?? $project['ultima_actualizacion'] ?? ''
+    );
+    $weeklyDate = is_array($weekly) ? civilwork_report_timestamp($weekly['fecha_informe'] ?? '') : 0;
+    if (is_array($weekly) && (!$apiDate || ($weeklyDate && $apiDate <= $weeklyDate))) {
         $project = array_replace($project, $weekly);
         $response['ok'] = true;
         $weeklyReportActive = true;

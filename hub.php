@@ -10,8 +10,11 @@ $weeklyPath = __DIR__ . '/reports/los-corales-semana-01.json';
 $weekly = is_file($weeklyPath) ? json_decode((string) file_get_contents($weeklyPath), true) : null;
 foreach ($projects as &$entry) {
     if (($entry['slug'] ?? '') !== 'los_corales' || !is_array($weekly)) continue;
-    $entryDate = strtotime((string) ($entry['fecha_informe'] ?? ''));
-    if (!$entryDate || $entryDate <= strtotime($weekly['fecha_informe'])) {
+    $entryDate = civilwork_report_timestamp(
+        $entry['fecha_informe'] ?? $entry['ultimo_informe'] ?? $entry['ultima_actualizacion'] ?? ''
+    );
+    $weeklyDate = civilwork_report_timestamp($weekly['fecha_informe'] ?? '');
+    if (!$entryDate || ($weeklyDate && $entryDate <= $weeklyDate)) {
         $entry = array_replace($entry, [
             'estado' => $weekly['estado'], 'proyecto' => $weekly['proyecto'],
             'descripcion' => $weekly['descripcion'], 'avance_integral' => 8,

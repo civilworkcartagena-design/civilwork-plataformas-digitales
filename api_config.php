@@ -71,6 +71,24 @@ function percentage($value): int
     return max(0, min(100, (int) round((float) $value)));
 }
 
+function civilwork_report_timestamp($value): int
+{
+    $date = trim((string) $value);
+    if ($date === '') {
+        return 0;
+    }
+
+    foreach (['!d/m/Y', '!Y-m-d', '!Y-m-d H:i:s'] as $format) {
+        $parsed = DateTimeImmutable::createFromFormat($format, $date);
+        if ($parsed instanceof DateTimeImmutable) {
+            return $parsed->getTimestamp();
+        }
+    }
+
+    $timestamp = strtotime($date);
+    return $timestamp === false ? 0 : $timestamp;
+}
+
 function money_cop($value): string
 {
     if ($value === null || $value === '') {
